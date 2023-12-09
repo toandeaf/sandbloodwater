@@ -1,12 +1,14 @@
+use crate::game::GamePlugin;
 use bevy::prelude::*;
 use bevy::DefaultPlugins;
 
+mod camera;
+mod game;
 mod player;
-use crate::player::PlayerPlugin;
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, PlayerPlugin))
+        .add_plugins((DefaultPlugins, GamePlugin))
         .add_systems(Startup, hello_world)
         .run();
 }
