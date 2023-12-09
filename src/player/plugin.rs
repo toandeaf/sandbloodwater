@@ -1,12 +1,13 @@
-use bevy::prelude::{App, Plugin, Startup};
+use bevy::prelude::{App, Main, Plugin, Startup};
 
-use crate::player::system::{add_players, iterate_through_players};
+use crate::player::system::{initialise_player, move_player};
 
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (add_players, iterate_through_players));
+        app.add_systems(Startup, initialise_player)
+            .add_systems(Main, move_player);
     }
 
     fn name(&self) -> &str {
