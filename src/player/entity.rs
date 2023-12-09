@@ -1,10 +1,11 @@
-use crate::player::component::{AnimationTimer, Name, Player};
 use bevy::prelude::*;
 use bevy::sprite::SpriteBundle;
 use bevy::utils::default;
 
-const PLAYER_SIZE: f32 = 40.;
-const PLAYER_COLOR: Color = Color::ORANGE_RED;
+use crate::player::component::{AnimationTimer, Name, Player};
+
+const PLAYER_SIZE: f32 = 20.;
+const PLAYER_COLOR: Color = Color::rgb(120., 115., 107.);
 const ANIMATION_SPEED: f32 = 0.025;
 
 pub fn generate_player_entity(
