@@ -1,10 +1,11 @@
-use crate::player::component::{AnimationTimer, Player};
-use crate::player::entity::generate_player_entity;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
+use crate::player::component::{AnimationTimer, Player};
+use crate::player::entity::generate_player_entity;
+
 const PLAYER_NAME: &str = "Ahman";
-const PLAYER_SPEED: f32 = 500.;
+const PLAYER_SPEED: f32 = 300.;
 const PLAYER_Z_INDEX: f32 = 1.;
 
 pub fn initialise_player(
