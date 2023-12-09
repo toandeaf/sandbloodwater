@@ -1,5 +1,5 @@
 ## Sand, Blood and Water
-![bloodsandwater.png](bloodsandwater.png)
+![bloodsandwater.png](blood_sand_water_smaller.png)
 
 Living, trading, fighting and dying in the desert. Desert based RPG/life sim written in Rust using the Bevy game engine.
 
