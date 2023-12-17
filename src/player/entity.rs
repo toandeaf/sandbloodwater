@@ -8,15 +8,20 @@ const PLAYER_SIZE: f32 = 20.;
 const PLAYER_COLOR: Color = Color::rgb(120., 115., 107.);
 const ANIMATION_SPEED: f32 = 0.025;
 
-pub fn generate_player_entity(
-    player_name: &str,
-    starting_position: Vec3,
-) -> (Player, Name, AnimationTimer, SpriteBundle) {
-    (
-        Player,
-        Name(String::from(player_name)),
-        AnimationTimer(Timer::from_seconds(ANIMATION_SPEED, TimerMode::Repeating)),
-        SpriteBundle {
+#[derive(Bundle)]
+pub struct PlayerBundle {
+    player: Player,
+    name: Name,
+    timer: AnimationTimer,
+    sprite_bundle: SpriteBundle,
+}
+
+pub fn create_player_entity(player_name: &str, starting_position: Vec3) -> PlayerBundle {
+    PlayerBundle {
+        player: Player,
+        name: Name(String::from(player_name)),
+        timer: AnimationTimer(Timer::from_seconds(ANIMATION_SPEED, TimerMode::Repeating)),
+        sprite_bundle: SpriteBundle {
             transform: Transform {
                 translation: starting_position,
                 ..default()
@@ -28,5 +33,5 @@ pub fn generate_player_entity(
             },
             ..default()
         },
-    )
+    }
 }

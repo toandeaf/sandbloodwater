@@ -1,4 +1,4 @@
-use crate::world::entity::generate_map_tile_entity;
+use crate::world::entity::create_map_tile_entity;
 use crate::world::utils::load_map_config_from_file;
 use bevy::prelude::Commands;
 
@@ -13,7 +13,7 @@ pub fn initialise_map(mut commands: Commands) {
 
     for row in tile_rows {
         for tile in row {
-            commands.spawn(generate_map_tile_entity(
+            commands.spawn(create_map_tile_entity(
                 TILE_SIZE,
                 &starting_x,
                 &starting_y,
