@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
 use crate::player::component::{AnimationTimer, Player};
-use crate::player::entity::generate_player_entity;
+use crate::player::entity::create_player_entity;
 
 const PLAYER_NAME: &str = "Ahman";
 const PLAYER_SPEED: f32 = 300.;
@@ -17,7 +17,7 @@ pub fn initialise_player(
     let half_window_width = window.width() / 2.;
     let half_window_height = window.height() / 2.;
 
-    commands.spawn(generate_player_entity(
+    commands.spawn(create_player_entity(
         PLAYER_NAME,
         Vec3::new(half_window_width, half_window_height, PLAYER_Z_INDEX),
     ));
