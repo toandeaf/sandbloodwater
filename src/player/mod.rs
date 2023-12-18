@@ -4,3 +4,4 @@ mod component;
 mod entity;
 mod plugin;
 mod system;
+mod resource;
