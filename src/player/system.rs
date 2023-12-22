@@ -44,22 +44,32 @@ pub fn move_player(
         // TODO refactor check_if_colliding to be direction configurable
         if timer.just_finished() {
             if keyboard_input.pressed(KeyCode::W) {
-                if !check_if_colliding(player_transform.translation, player_radius, &world_bundle) {
+                if !collide_check_up(player_transform.translation, player_radius, &world_bundle) {
                     player_transform.translation.y +=
                         player_attributes.speed * time.delta_seconds();
                 }
             } else if keyboard_input.pressed(KeyCode::S) {
-                player_transform.translation.y -= player_attributes.speed * time.delta_seconds();
+                if !collide_check_down(player_transform.translation, player_radius, &world_bundle) {
+                    player_transform.translation.y -=
+                        player_attributes.speed * time.delta_seconds();
+                }
             } else if keyboard_input.pressed(KeyCode::A) {
-                player_transform.translation.x -= player_attributes.speed * time.delta_seconds();
+                if !collide_check_left(player_transform.translation, player_radius, &world_bundle) {
+                    player_transform.translation.x -=
+                        player_attributes.speed * time.delta_seconds();
+                }
             } else if keyboard_input.pressed(KeyCode::D) {
-                player_transform.translation.x += player_attributes.speed * time.delta_seconds();
+                if !collide_check_right(player_transform.translation, player_radius, &world_bundle)
+                {
+                    player_transform.translation.x +=
+                        player_attributes.speed * time.delta_seconds();
+                }
             }
         }
     }
 }
 
-fn check_if_colliding(
+fn collide_check_up(
     player_position: Vec3,
     player_radius: f32,
     world_bundle: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
@@ -74,8 +84,11 @@ fn check_if_colliding(
         let x_range = (tile_transform.translation.x - sprite_radius)
             ..(tile_transform.translation.x + sprite_radius);
 
-        // TODO an "overlap" function here? atm it'll take the center point of the player, but that'll clip
-        if !x_range.contains(&player_position.x) {
+        // So if either edge of the player is touching the x_range of the sprite, RIP.
+        let player_left_side = player_position.x - player_radius;
+        let player_right_side = player_position.x + player_radius;
+
+        if !x_range.contains(&player_left_side) && !x_range.contains(&player_right_side) {
             continue;
         }
 
@@ -83,6 +96,96 @@ fn check_if_colliding(
         let distance = contact_edge - (tile_transform.translation.y - sprite_radius);
 
         // TODO This doesn't feel safe/consistent enough? Why's -3. fine?
+        if (-3. ..=0.).contains(&distance) && tile_is_solid(tile_type) {
+            return true;
+        }
+    }
+
+    false
+}
+
+fn collide_check_down(
+    player_position: Vec3,
+    player_radius: f32,
+    world_bundle: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
+) -> bool {
+    let contact_edge = player_position.y - player_radius;
+
+    for (tile_transform, sprite, tile_type) in world_bundle.iter() {
+        let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
+
+        let x_range = (tile_transform.translation.x - sprite_radius)
+            ..(tile_transform.translation.x + sprite_radius);
+
+        let player_left_side = player_position.x - player_radius;
+        let player_right_side = player_position.x + player_radius;
+
+        if !x_range.contains(&player_left_side) && !x_range.contains(&player_right_side) {
+            continue;
+        }
+
+        let distance = contact_edge - (tile_transform.translation.y + sprite_radius);
+
+        if (-3. ..=0.).contains(&distance) && tile_is_solid(tile_type) {
+            return true;
+        }
+    }
+
+    false
+}
+
+fn collide_check_left(
+    player_position: Vec3,
+    player_radius: f32,
+    world_bundle: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
+) -> bool {
+    let contact_edge = player_position.x - player_radius;
+
+    for (tile_transform, sprite, tile_type) in world_bundle.iter() {
+        let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
+
+        let y_range = (tile_transform.translation.y - sprite_radius)
+            ..(tile_transform.translation.y + sprite_radius);
+
+        let player_top_side = player_position.y + player_radius;
+        let player_bottom_side = player_position.y - player_radius;
+
+        if !y_range.contains(&player_top_side) && !y_range.contains(&player_bottom_side) {
+            continue;
+        }
+
+        let distance = contact_edge - (tile_transform.translation.x + sprite_radius);
+
+        if (-3. ..=0.).contains(&distance) && tile_is_solid(tile_type) {
+            return true;
+        }
+    }
+
+    false
+}
+
+fn collide_check_right(
+    player_position: Vec3,
+    player_radius: f32,
+    world_bundle: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
+) -> bool {
+    let contact_edge = player_position.x + player_radius;
+
+    for (tile_transform, sprite, tile_type) in world_bundle.iter() {
+        let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
+
+        let y_range = (tile_transform.translation.y - sprite_radius)
+            ..(tile_transform.translation.y + sprite_radius);
+
+        let player_top_side = player_position.y + player_radius;
+        let player_bottom_side = player_position.y - player_radius;
+
+        if !y_range.contains(&player_top_side) && !y_range.contains(&player_bottom_side) {
+            continue;
+        }
+
+        let distance = contact_edge - (tile_transform.translation.x - sprite_radius);
+
         if (-3. ..=0.).contains(&distance) && tile_is_solid(tile_type) {
             return true;
         }
