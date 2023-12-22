@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
+use std::ops::Range;
 
 use crate::player::component::{AnimationTimer, Player};
 use crate::player::entity::create_player_entity;
@@ -39,28 +40,72 @@ pub fn move_player(
 ) {
     let player_radius = player_attributes.size / 2.;
     for (mut player_transform, mut timer) in &mut player_bundle {
+        let player_position = player_transform.translation;
+
         timer.tick(time.delta());
 
-        // TODO refactor check_if_colliding to be direction configurable
         if timer.just_finished() {
             if keyboard_input.pressed(KeyCode::W) {
-                if !collide_check_up(player_transform.translation, player_radius, &world_bundle) {
+                let player_positions = (
+                    player_position.y + player_radius,
+                    player_position.x - player_radius,
+                    player_position.x + player_radius,
+                );
+
+                if !collide_check(
+                    &world_bundle,
+                    player_positions,
+                    compute_tile_bottom,
+                    compute_tile_range_x,
+                ) {
                     player_transform.translation.y +=
                         player_attributes.speed * time.delta_seconds();
                 }
             } else if keyboard_input.pressed(KeyCode::S) {
-                if !collide_check_down(player_transform.translation, player_radius, &world_bundle) {
+                let player_positions = (
+                    player_position.y - player_radius,
+                    player_position.x - player_radius,
+                    player_position.x + player_radius,
+                );
+
+                if !collide_check(
+                    &world_bundle,
+                    player_positions,
+                    compute_tile_top,
+                    compute_tile_range_x,
+                ) {
                     player_transform.translation.y -=
                         player_attributes.speed * time.delta_seconds();
                 }
             } else if keyboard_input.pressed(KeyCode::A) {
-                if !collide_check_left(player_transform.translation, player_radius, &world_bundle) {
+                let player_positions = (
+                    player_position.x - player_radius,
+                    player_position.y - player_radius,
+                    player_position.y + player_radius,
+                );
+
+                if !collide_check(
+                    &world_bundle,
+                    player_positions,
+                    compute_tile_right,
+                    compute_tile_range_y,
+                ) {
                     player_transform.translation.x -=
                         player_attributes.speed * time.delta_seconds();
                 }
             } else if keyboard_input.pressed(KeyCode::D) {
-                if !collide_check_right(player_transform.translation, player_radius, &world_bundle)
-                {
+                let player_positions = (
+                    player_position.x + player_radius,
+                    player_position.y - player_radius,
+                    player_position.y + player_radius,
+                );
+
+                if !collide_check(
+                    &world_bundle,
+                    player_positions,
+                    compute_tile_left,
+                    compute_tile_range_y,
+                ) {
                     player_transform.translation.x +=
                         player_attributes.speed * time.delta_seconds();
                 }
@@ -69,31 +114,29 @@ pub fn move_player(
     }
 }
 
-fn collide_check_up(
-    player_position: Vec3,
-    player_radius: f32,
+fn collide_check(
     world_bundle: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
+    player_positions: (f32, f32, f32),
+    compute_tile_edge: fn(Vec3, f32) -> f32,
+    compute_tile_range: fn(Vec3, f32) -> Range<f32>,
 ) -> bool {
-    let contact_edge = player_position.y + player_radius;
+    let contact_edge = player_positions.0;
+    let player_left_side = player_positions.1;
+    let player_right_side = player_positions.2;
 
     for (tile_transform, sprite, tile_type) in world_bundle.iter() {
         // TODO seems costly - abstract this to resource? Or figure out single queries?
         let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
 
         // From the left most point on the x, to the right most.
-        let x_range = (tile_transform.translation.x - sprite_radius)
-            ..(tile_transform.translation.x + sprite_radius);
-
-        // So if either edge of the player is touching the x_range of the sprite, RIP.
-        let player_left_side = player_position.x - player_radius;
-        let player_right_side = player_position.x + player_radius;
+        let x_range = compute_tile_range(tile_transform.translation, sprite_radius);
 
         if !x_range.contains(&player_left_side) && !x_range.contains(&player_right_side) {
             continue;
         }
 
         // Distance between the y axis position of the player's top most edge and the tile's bottom most edge
-        let distance = contact_edge - (tile_transform.translation.y - sprite_radius);
+        let distance = contact_edge - compute_tile_edge(tile_transform.translation, sprite_radius);
 
         // TODO This doesn't feel safe/consistent enough? Why's -3. fine?
         if (-3. ..=0.).contains(&distance) && tile_is_solid(tile_type) {
@@ -104,94 +147,29 @@ fn collide_check_up(
     false
 }
 
-fn collide_check_down(
-    player_position: Vec3,
-    player_radius: f32,
-    world_bundle: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
-) -> bool {
-    let contact_edge = player_position.y - player_radius;
-
-    for (tile_transform, sprite, tile_type) in world_bundle.iter() {
-        let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
-
-        let x_range = (tile_transform.translation.x - sprite_radius)
-            ..(tile_transform.translation.x + sprite_radius);
-
-        let player_left_side = player_position.x - player_radius;
-        let player_right_side = player_position.x + player_radius;
-
-        if !x_range.contains(&player_left_side) && !x_range.contains(&player_right_side) {
-            continue;
-        }
-
-        let distance = contact_edge - (tile_transform.translation.y + sprite_radius);
-
-        if (-3. ..=0.).contains(&distance) && tile_is_solid(tile_type) {
-            return true;
-        }
-    }
-
-    false
+// TODO Suuurely I don't need this redundancy? Maybe just define the clojures inline?
+fn compute_tile_top(tile_axis: Vec3, tile_radius: f32) -> f32 {
+    tile_axis.y + tile_radius
 }
 
-fn collide_check_left(
-    player_position: Vec3,
-    player_radius: f32,
-    world_bundle: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
-) -> bool {
-    let contact_edge = player_position.x - player_radius;
-
-    for (tile_transform, sprite, tile_type) in world_bundle.iter() {
-        let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
-
-        let y_range = (tile_transform.translation.y - sprite_radius)
-            ..(tile_transform.translation.y + sprite_radius);
-
-        let player_top_side = player_position.y + player_radius;
-        let player_bottom_side = player_position.y - player_radius;
-
-        if !y_range.contains(&player_top_side) && !y_range.contains(&player_bottom_side) {
-            continue;
-        }
-
-        let distance = contact_edge - (tile_transform.translation.x + sprite_radius);
-
-        if (-3. ..=0.).contains(&distance) && tile_is_solid(tile_type) {
-            return true;
-        }
-    }
-
-    false
+fn compute_tile_bottom(tile_axis: Vec3, tile_radius: f32) -> f32 {
+    tile_axis.y - tile_radius
 }
 
-fn collide_check_right(
-    player_position: Vec3,
-    player_radius: f32,
-    world_bundle: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
-) -> bool {
-    let contact_edge = player_position.x + player_radius;
+fn compute_tile_right(tile_axis: Vec3, tile_radius: f32) -> f32 {
+    tile_axis.x + tile_radius
+}
 
-    for (tile_transform, sprite, tile_type) in world_bundle.iter() {
-        let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
+fn compute_tile_left(tile_axis: Vec3, tile_radius: f32) -> f32 {
+    tile_axis.x - tile_radius
+}
 
-        let y_range = (tile_transform.translation.y - sprite_radius)
-            ..(tile_transform.translation.y + sprite_radius);
+fn compute_tile_range_x(position: Vec3, sprite_radius: f32) -> Range<f32> {
+    (position.x - sprite_radius)..(position.x + sprite_radius)
+}
 
-        let player_top_side = player_position.y + player_radius;
-        let player_bottom_side = player_position.y - player_radius;
-
-        if !y_range.contains(&player_top_side) && !y_range.contains(&player_bottom_side) {
-            continue;
-        }
-
-        let distance = contact_edge - (tile_transform.translation.x - sprite_radius);
-
-        if (-3. ..=0.).contains(&distance) && tile_is_solid(tile_type) {
-            return true;
-        }
-    }
-
-    false
+fn compute_tile_range_y(position: Vec3, sprite_radius: f32) -> Range<f32> {
+    (position.y - sprite_radius)..(position.y + sprite_radius)
 }
 
 fn tile_is_solid(tile_type: &TileType) -> bool {
