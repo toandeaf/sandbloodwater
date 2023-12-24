@@ -45,71 +45,79 @@ pub fn move_player(
         timer.tick(time.delta());
 
         if timer.just_finished() {
-            if keyboard_input.pressed(KeyCode::W) {
-                let player_positions = (
-                    player_position.y + player_radius,
-                    player_position.x - player_radius,
-                    player_position.x + player_radius,
-                );
+            keyboard_input
+                .get_pressed()
+                .for_each(|key_pressed| match key_pressed {
+                    KeyCode::W => {
+                        let player_positions = (
+                            player_position.y + player_radius,
+                            player_position.x - player_radius,
+                            player_position.x + player_radius,
+                        );
 
-                if !collide_check(
-                    &world_bundle,
-                    player_positions,
-                    compute_tile_bottom,
-                    compute_tile_range_x,
-                ) {
-                    player_transform.translation.y +=
-                        player_attributes.speed * time.delta_seconds();
-                }
-            } else if keyboard_input.pressed(KeyCode::S) {
-                let player_positions = (
-                    player_position.y - player_radius,
-                    player_position.x - player_radius,
-                    player_position.x + player_radius,
-                );
+                        if !collide_check(
+                            &world_bundle,
+                            player_positions,
+                            compute_tile_bottom,
+                            compute_tile_range_x,
+                        ) {
+                            player_transform.translation.y +=
+                                player_attributes.speed * time.delta_seconds();
+                        }
+                    }
+                    KeyCode::S => {
+                        let player_positions = (
+                            player_position.y - player_radius,
+                            player_position.x - player_radius,
+                            player_position.x + player_radius,
+                        );
 
-                if !collide_check(
-                    &world_bundle,
-                    player_positions,
-                    compute_tile_top,
-                    compute_tile_range_x,
-                ) {
-                    player_transform.translation.y -=
-                        player_attributes.speed * time.delta_seconds();
-                }
-            } else if keyboard_input.pressed(KeyCode::A) {
-                let player_positions = (
-                    player_position.x - player_radius,
-                    player_position.y - player_radius,
-                    player_position.y + player_radius,
-                );
+                        if !collide_check(
+                            &world_bundle,
+                            player_positions,
+                            compute_tile_top,
+                            compute_tile_range_x,
+                        ) {
+                            player_transform.translation.y -=
+                                player_attributes.speed * time.delta_seconds();
+                        }
+                    }
+                    KeyCode::A => {
+                        let player_positions = (
+                            player_position.x - player_radius,
+                            player_position.y - player_radius,
+                            player_position.y + player_radius,
+                        );
 
-                if !collide_check(
-                    &world_bundle,
-                    player_positions,
-                    compute_tile_right,
-                    compute_tile_range_y,
-                ) {
-                    player_transform.translation.x -=
-                        player_attributes.speed * time.delta_seconds();
-                }
-            } else if keyboard_input.pressed(KeyCode::D) {
-                let player_positions = (
-                    player_position.x + player_radius,
-                    player_position.y - player_radius,
-                    player_position.y + player_radius,
-                );
+                        if !collide_check(
+                            &world_bundle,
+                            player_positions,
+                            compute_tile_right,
+                            compute_tile_range_y,
+                        ) {
+                            player_transform.translation.x -=
+                                player_attributes.speed * time.delta_seconds();
+                        }
+                    }
+                    KeyCode::D => {
+                        let player_positions = (
+                            player_position.x + player_radius,
+                            player_position.y - player_radius,
+                            player_position.y + player_radius,
+                        );
 
-                if !collide_check(
-                    &world_bundle,
-                    player_positions,
-                    compute_tile_left,
-                    compute_tile_range_y,
-                ) {
-                    player_transform.translation.x +=
-                        player_attributes.speed * time.delta_seconds();
-                }
-            }
+                        if !collide_check(
+                            &world_bundle,
+                            player_positions,
+                            compute_tile_left,
+                            compute_tile_range_y,
+                        ) {
+                            player_transform.translation.x +=
+                                player_attributes.speed * time.delta_seconds();
+                        }
+                    }
+                    _ => {}
+                });
         }
     }
 }
