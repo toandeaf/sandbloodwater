@@ -23,11 +23,8 @@ pub fn initialise_player(
     ));
 }
 
-// TODO this shuts things up, but bevy doesn't see it as a system param anymore wub wub
-// type PlayerQuery<'a, 'b> =
-//     Query<'a, 'b, (&'a mut Transform, &'b mut AnimationTimer), (With<Player>, Without<TileType>)>;
-
-// TODO clean up these types somehow?
+// TODO work out how to properly abstract those bundles to reduce complexity
+#[allow(clippy::type_complexity)]
 pub fn move_player(
     time: Res<Time>,
     player_attributes: Res<PlayerAttributes>,
@@ -39,6 +36,8 @@ pub fn move_player(
     world_bundle: Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
 ) {
     let player_radius = player_attributes.size / 2.;
+    let player_speed = player_attributes.speed;
+
     for (mut player_transform, mut timer) in &mut player_bundle {
         let player_position = player_transform.translation;
 
@@ -46,6 +45,7 @@ pub fn move_player(
 
         if timer.just_finished() {
             let time_delta = time.delta_seconds();
+            let adjusted_speed = player_speed * time_delta;
 
             keyboard_input
                 .get_pressed()
@@ -57,13 +57,14 @@ pub fn move_player(
                             player_position.x + player_radius,
                         );
 
+                        // TODO Refactor this to return speed and factor in shit like tile type you're on
                         if !collide_check(
                             &world_bundle,
                             player_positions,
                             compute_tile_bottom,
                             compute_tile_range_x,
                         ) {
-                            player_transform.translation.y += player_attributes.speed * time_delta;
+                            player_transform.translation.y += adjusted_speed;
                         }
                     }
                     KeyCode::S => {
@@ -79,7 +80,7 @@ pub fn move_player(
                             compute_tile_top,
                             compute_tile_range_x,
                         ) {
-                            player_transform.translation.y -= player_attributes.speed * time_delta;
+                            player_transform.translation.y -= adjusted_speed;
                         }
                     }
                     KeyCode::A => {
@@ -95,7 +96,7 @@ pub fn move_player(
                             compute_tile_right,
                             compute_tile_range_y,
                         ) {
-                            player_transform.translation.x -= player_attributes.speed * time_delta;
+                            player_transform.translation.x -= adjusted_speed;
                         }
                     }
                     KeyCode::D => {
@@ -111,7 +112,7 @@ pub fn move_player(
                             compute_tile_left,
                             compute_tile_range_y,
                         ) {
-                            player_transform.translation.x += player_attributes.speed * time_delta;
+                            player_transform.translation.x += adjusted_speed;
                         }
                     }
                     _ => {}
@@ -120,6 +121,7 @@ pub fn move_player(
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn collide_check(
     world_bundle: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
     player_positions: (f32, f32, f32),
@@ -142,8 +144,8 @@ fn collide_check(
             let distance =
                 compute_tile_distance(tile_transform.translation, sprite_radius, contact_edge);
 
-            // TODO This doesn't feel safe/consistent enough? Why's -3. fine?
-            if (-3. ..0.).contains(&distance) && tile_is_solid(tile_type) {
+            // TODO Rework this, it's pretty non-deterministic atm
+            if (-2.0..0.).contains(&distance) && tile_is_solid(tile_type) {
                 return true;
             }
         }
@@ -152,7 +154,7 @@ fn collide_check(
     false
 }
 
-// TODO Suuurely I don't need this redundancy? Maybe just define the clojures inline?
+// TODO Move to closures just?
 fn compute_tile_top(tile_axis: Vec3, tile_radius: f32, contact_edge: f32) -> f32 {
     (tile_axis.y + tile_radius) - contact_edge
 }

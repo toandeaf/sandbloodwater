@@ -1,8 +1,8 @@
 use bevy::prelude::{Color, Resource};
 
 const PLAYER_SIZE: f32 = 20.;
-const PLAYER_SPEED: f32 = 300.;
-const PLAYER_COLOR: Color = Color::rgb(120., 115., 107.);
+const PLAYER_SPEED: f32 = 200.;
+const PLAYER_COLOR: Color = Color::rgb(127., 255., 0.);
 
 #[derive(Resource)]
 pub struct PlayerAttributes {
