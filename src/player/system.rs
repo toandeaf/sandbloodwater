@@ -45,6 +45,8 @@ pub fn move_player(
         timer.tick(time.delta());
 
         if timer.just_finished() {
+            let time_delta = time.delta_seconds();
+
             keyboard_input
                 .get_pressed()
                 .for_each(|key_pressed| match key_pressed {
@@ -61,8 +63,7 @@ pub fn move_player(
                             compute_tile_bottom,
                             compute_tile_range_x,
                         ) {
-                            player_transform.translation.y +=
-                                player_attributes.speed * time.delta_seconds();
+                            player_transform.translation.y += player_attributes.speed * time_delta;
                         }
                     }
                     KeyCode::S => {
@@ -78,8 +79,7 @@ pub fn move_player(
                             compute_tile_top,
                             compute_tile_range_x,
                         ) {
-                            player_transform.translation.y -=
-                                player_attributes.speed * time.delta_seconds();
+                            player_transform.translation.y -= player_attributes.speed * time_delta;
                         }
                     }
                     KeyCode::A => {
@@ -95,8 +95,7 @@ pub fn move_player(
                             compute_tile_right,
                             compute_tile_range_y,
                         ) {
-                            player_transform.translation.x -=
-                                player_attributes.speed * time.delta_seconds();
+                            player_transform.translation.x -= player_attributes.speed * time_delta;
                         }
                     }
                     KeyCode::D => {
@@ -112,8 +111,7 @@ pub fn move_player(
                             compute_tile_left,
                             compute_tile_range_y,
                         ) {
-                            player_transform.translation.x +=
-                                player_attributes.speed * time.delta_seconds();
+                            player_transform.translation.x += player_attributes.speed * time_delta;
                         }
                     }
                     _ => {}
@@ -125,30 +123,29 @@ pub fn move_player(
 fn collide_check(
     world_bundle: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
     player_positions: (f32, f32, f32),
-    compute_tile_edge: fn(Vec3, f32) -> f32,
-    compute_tile_range: fn(Vec3, f32) -> Range<f32>,
+    compute_tile_distance: fn(Vec3, f32, f32) -> f32,
+    compute_sile_side_range: fn(Vec3, f32) -> Range<f32>,
 ) -> bool {
-    let contact_edge = player_positions.0;
-    let player_left_side = player_positions.1;
-    let player_right_side = player_positions.2;
+    let (contact_edge, player_left_side, player_right_side) = player_positions;
 
     for (tile_transform, sprite, tile_type) in world_bundle.iter() {
         // TODO seems costly - abstract this to resource? Or figure out single queries?
         let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
 
-        // From the left most point on the x, to the right most.
-        let x_range = compute_tile_range(tile_transform.translation, sprite_radius);
+        // The range from corner to corner of a given tile
+        let tile_side_range = compute_sile_side_range(tile_transform.translation, sprite_radius);
 
-        if !x_range.contains(&player_left_side) && !x_range.contains(&player_right_side) {
-            continue;
-        }
+        if tile_side_range.contains(&player_left_side)
+            || tile_side_range.contains(&player_right_side)
+        {
+            // Distance between the y axis position of the player's top most edge and the tile's bottom most edge
+            let distance =
+                compute_tile_distance(tile_transform.translation, sprite_radius, contact_edge);
 
-        // Distance between the y axis position of the player's top most edge and the tile's bottom most edge
-        let distance = contact_edge - compute_tile_edge(tile_transform.translation, sprite_radius);
-
-        // TODO This doesn't feel safe/consistent enough? Why's -3. fine?
-        if (-3. ..=0.).contains(&distance) && tile_is_solid(tile_type) {
-            return true;
+            // TODO This doesn't feel safe/consistent enough? Why's -3. fine?
+            if (-3. ..0.).contains(&distance) && tile_is_solid(tile_type) {
+                return true;
+            }
         }
     }
 
@@ -156,20 +153,20 @@ fn collide_check(
 }
 
 // TODO Suuurely I don't need this redundancy? Maybe just define the clojures inline?
-fn compute_tile_top(tile_axis: Vec3, tile_radius: f32) -> f32 {
-    tile_axis.y + tile_radius
+fn compute_tile_top(tile_axis: Vec3, tile_radius: f32, contact_edge: f32) -> f32 {
+    (tile_axis.y + tile_radius) - contact_edge
 }
 
-fn compute_tile_bottom(tile_axis: Vec3, tile_radius: f32) -> f32 {
-    tile_axis.y - tile_radius
+fn compute_tile_bottom(tile_axis: Vec3, tile_radius: f32, contact_edge: f32) -> f32 {
+    contact_edge - (tile_axis.y - tile_radius)
 }
 
-fn compute_tile_right(tile_axis: Vec3, tile_radius: f32) -> f32 {
-    tile_axis.x + tile_radius
+fn compute_tile_right(tile_axis: Vec3, tile_radius: f32, contact_edge: f32) -> f32 {
+    (tile_axis.x + tile_radius) - contact_edge
 }
 
-fn compute_tile_left(tile_axis: Vec3, tile_radius: f32) -> f32 {
-    tile_axis.x - tile_radius
+fn compute_tile_left(tile_axis: Vec3, tile_radius: f32, contact_edge: f32) -> f32 {
+    contact_edge - (tile_axis.x - tile_radius)
 }
 
 fn compute_tile_range_x(position: Vec3, sprite_radius: f32) -> Range<f32> {
