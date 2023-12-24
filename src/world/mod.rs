@@ -1,4 +1,5 @@
 pub use plugin::WorldPlugin;
+pub use component::TileType;
 
 mod component;
 mod entity;

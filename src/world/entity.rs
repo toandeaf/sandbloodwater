@@ -7,13 +7,14 @@ use crate::world::utils::get_tile_color;
 pub struct WorldTileBundle {
     world: World,
     sprite_bundle: SpriteBundle,
+    tile_type: TileType,
 }
 
 pub fn create_map_tile_entity(
     tile_size: f32,
     starting_x: &f32,
     starting_y: &f32,
-    tile: TileType,
+    tile_type: TileType,
 ) -> WorldTileBundle {
     WorldTileBundle {
         world: World,
@@ -24,10 +25,11 @@ pub fn create_map_tile_entity(
             },
             sprite: Sprite {
                 custom_size: Some(Vec2::splat(tile_size)),
-                color: get_tile_color(tile),
+                color: get_tile_color(tile_type),
                 ..default()
             },
             ..default()
         },
+        tile_type,
     }
 }

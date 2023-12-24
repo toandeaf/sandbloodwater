@@ -6,7 +6,7 @@ use bevy::prelude::Component;
 #[derive(Component)]
 pub struct World;
 
-#[derive(Debug)]
+#[derive(Component, Debug, Clone, Copy)]
 pub enum TileType {
     Land,
     Mountain,

@@ -1,16 +1,16 @@
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
+use std::ops::Range;
 
 use crate::player::component::{AnimationTimer, Player};
 use crate::player::entity::create_player_entity;
-
-const PLAYER_NAME: &str = "Ahman";
-const PLAYER_SPEED: f32 = 300.;
-const PLAYER_Z_INDEX: f32 = 1.;
+use crate::player::resource::PlayerAttributes;
+use crate::world::TileType;
 
 pub fn initialise_player(
     mut commands: Commands,
     window_query: Query<&Window, With<PrimaryWindow>>,
+    player_attributes: Res<PlayerAttributes>,
 ) {
     let window = window_query.get_single().unwrap();
 
@@ -18,28 +18,173 @@ pub fn initialise_player(
     let half_window_height = window.height() / 2.;
 
     commands.spawn(create_player_entity(
-        PLAYER_NAME,
-        Vec3::new(half_window_width, half_window_height, PLAYER_Z_INDEX),
+        player_attributes,
+        Vec3::new(half_window_width, half_window_height, 1.),
     ));
 }
 
+// TODO work out how to properly abstract those bundles to reduce complexity
+#[allow(clippy::type_complexity)]
 pub fn move_player(
     time: Res<Time>,
+    player_attributes: Res<PlayerAttributes>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut player_bundle: Query<(&mut Transform, &mut AnimationTimer), With<Player>>,
+    mut player_bundle: Query<
+        (&mut Transform, &mut AnimationTimer),
+        (With<Player>, Without<TileType>),
+    >,
+    world_bundle: Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
 ) {
-    for (mut transform, mut timer) in &mut player_bundle {
+    let player_radius = player_attributes.size / 2.;
+    let player_speed = player_attributes.speed;
+
+    for (mut player_transform, mut timer) in &mut player_bundle {
+        let player_position = player_transform.translation;
+
         timer.tick(time.delta());
+
         if timer.just_finished() {
-            if keyboard_input.pressed(KeyCode::W) {
-                transform.translation.y += PLAYER_SPEED * time.delta_seconds();
-            } else if keyboard_input.pressed(KeyCode::S) {
-                transform.translation.y -= PLAYER_SPEED * time.delta_seconds();
-            } else if keyboard_input.pressed(KeyCode::A) {
-                transform.translation.x -= PLAYER_SPEED * time.delta_seconds();
-            } else if keyboard_input.pressed(KeyCode::D) {
-                transform.translation.x += PLAYER_SPEED * time.delta_seconds();
+            let time_delta = time.delta_seconds();
+            let adjusted_speed = player_speed * time_delta;
+
+            keyboard_input
+                .get_pressed()
+                .for_each(|key_pressed| match key_pressed {
+                    KeyCode::W => {
+                        let player_positions = (
+                            player_position.y + player_radius,
+                            player_position.x - player_radius,
+                            player_position.x + player_radius,
+                        );
+
+                        // TODO Refactor this to return speed and factor in shit like tile type you're on
+                        if !collide_check(
+                            &world_bundle,
+                            player_positions,
+                            compute_tile_bottom,
+                            compute_tile_range_x,
+                        ) {
+                            player_transform.translation.y += adjusted_speed;
+                        }
+                    }
+                    KeyCode::S => {
+                        let player_positions = (
+                            player_position.y - player_radius,
+                            player_position.x - player_radius,
+                            player_position.x + player_radius,
+                        );
+
+                        if !collide_check(
+                            &world_bundle,
+                            player_positions,
+                            compute_tile_top,
+                            compute_tile_range_x,
+                        ) {
+                            player_transform.translation.y -= adjusted_speed;
+                        }
+                    }
+                    KeyCode::A => {
+                        let player_positions = (
+                            player_position.x - player_radius,
+                            player_position.y - player_radius,
+                            player_position.y + player_radius,
+                        );
+
+                        if !collide_check(
+                            &world_bundle,
+                            player_positions,
+                            compute_tile_right,
+                            compute_tile_range_y,
+                        ) {
+                            player_transform.translation.x -= adjusted_speed;
+                        }
+                    }
+                    KeyCode::D => {
+                        let player_positions = (
+                            player_position.x + player_radius,
+                            player_position.y - player_radius,
+                            player_position.y + player_radius,
+                        );
+
+                        if !collide_check(
+                            &world_bundle,
+                            player_positions,
+                            compute_tile_left,
+                            compute_tile_range_y,
+                        ) {
+                            player_transform.translation.x += adjusted_speed;
+                        }
+                    }
+                    _ => {}
+                });
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+fn collide_check(
+    world_bundle: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
+    player_positions: (f32, f32, f32),
+    compute_tile_distance: fn(Vec3, f32, f32) -> f32,
+    compute_sile_side_range: fn(Vec3, f32) -> Range<f32>,
+) -> bool {
+    let (contact_edge, player_left_side, player_right_side) = player_positions;
+
+    for (tile_transform, sprite, tile_type) in world_bundle.iter() {
+        // TODO seems costly - abstract this to resource? Or figure out single queries?
+        let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
+
+        // The range from corner to corner of a given tile
+        let tile_side_range = compute_sile_side_range(tile_transform.translation, sprite_radius);
+
+        if tile_side_range.contains(&player_left_side)
+            || tile_side_range.contains(&player_right_side)
+        {
+            // Distance between the y axis position of the player's top most edge and the tile's bottom most edge
+            let distance =
+                compute_tile_distance(tile_transform.translation, sprite_radius, contact_edge);
+
+            // TODO Rework this, it's pretty non-deterministic atm
+            if (-2.0..0.).contains(&distance) && tile_is_solid(tile_type) {
+                return true;
             }
         }
+    }
+
+    false
+}
+
+// TODO Move to closures just?
+fn compute_tile_top(tile_axis: Vec3, tile_radius: f32, contact_edge: f32) -> f32 {
+    (tile_axis.y + tile_radius) - contact_edge
+}
+
+fn compute_tile_bottom(tile_axis: Vec3, tile_radius: f32, contact_edge: f32) -> f32 {
+    contact_edge - (tile_axis.y - tile_radius)
+}
+
+fn compute_tile_right(tile_axis: Vec3, tile_radius: f32, contact_edge: f32) -> f32 {
+    (tile_axis.x + tile_radius) - contact_edge
+}
+
+fn compute_tile_left(tile_axis: Vec3, tile_radius: f32, contact_edge: f32) -> f32 {
+    contact_edge - (tile_axis.x - tile_radius)
+}
+
+fn compute_tile_range_x(position: Vec3, sprite_radius: f32) -> Range<f32> {
+    (position.x - sprite_radius)..(position.x + sprite_radius)
+}
+
+fn compute_tile_range_y(position: Vec3, sprite_radius: f32) -> Range<f32> {
+    (position.y - sprite_radius)..(position.y + sprite_radius)
+}
+
+fn tile_is_solid(tile_type: &TileType) -> bool {
+    match tile_type {
+        TileType::Land => false,
+        TileType::Mountain => true,
+        TileType::Water => false,
+        TileType::Building => true,
+        TileType::Unsupported => false,
     }
 }
