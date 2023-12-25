@@ -7,6 +7,21 @@ use crate::player::entity::create_player_entity;
 use crate::player::resource::PlayerAttributes;
 use crate::world::TileType;
 
+type Speed = f32;
+
+// TODO this will probably need to get lifted out at some stage and associated with a component
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+// TODO I'm hoping this isn't necessary once I crack this sticky/clippy issue with collisions.
+// Note - it's currently decoupled from player speed, but they need to be in sync for smooth ops.
+const COLLISION_BUFFER: f32 = 3.;
+const DEFAULT_SPEED: f32 = 1.;
+
 pub fn initialise_player(
     mut commands: Commands,
     window_query: Query<&Window, With<PrimaryWindow>>,
@@ -51,69 +66,40 @@ pub fn move_player(
                 .get_pressed()
                 .for_each(|key_pressed| match key_pressed {
                     KeyCode::W => {
-                        let player_positions = (
-                            player_position.y + player_radius,
-                            player_position.x - player_radius,
-                            player_position.x + player_radius,
+                        let speed_through_tile = calculate_speed_for_direction(
+                            Direction::Up,
+                            (player_position, player_radius),
+                            &world_bundle,
                         );
 
-                        // TODO Refactor this to return speed and factor in shit like tile type you're on
-                        if !collide_check(
-                            &world_bundle,
-                            player_positions,
-                            compute_tile_bottom,
-                            compute_tile_range_x,
-                        ) {
-                            player_transform.translation.y += adjusted_speed;
-                        }
+                        player_transform.translation.y += adjusted_speed * speed_through_tile;
                     }
                     KeyCode::S => {
-                        let player_positions = (
-                            player_position.y - player_radius,
-                            player_position.x - player_radius,
-                            player_position.x + player_radius,
+                        let speed_through_tile = calculate_speed_for_direction(
+                            Direction::Down,
+                            (player_position, player_radius),
+                            &world_bundle,
                         );
 
-                        if !collide_check(
-                            &world_bundle,
-                            player_positions,
-                            compute_tile_top,
-                            compute_tile_range_x,
-                        ) {
-                            player_transform.translation.y -= adjusted_speed;
-                        }
+                        player_transform.translation.y -= adjusted_speed * speed_through_tile;
                     }
                     KeyCode::A => {
-                        let player_positions = (
-                            player_position.x - player_radius,
-                            player_position.y - player_radius,
-                            player_position.y + player_radius,
+                        let speed_through_tile = calculate_speed_for_direction(
+                            Direction::Left,
+                            (player_position, player_radius),
+                            &world_bundle,
                         );
 
-                        if !collide_check(
-                            &world_bundle,
-                            player_positions,
-                            compute_tile_right,
-                            compute_tile_range_y,
-                        ) {
-                            player_transform.translation.x -= adjusted_speed;
-                        }
+                        player_transform.translation.x -= adjusted_speed * speed_through_tile;
                     }
                     KeyCode::D => {
-                        let player_positions = (
-                            player_position.x + player_radius,
-                            player_position.y - player_radius,
-                            player_position.y + player_radius,
+                        let speed_through_tile = calculate_speed_for_direction(
+                            Direction::Right,
+                            (player_position, player_radius),
+                            &world_bundle,
                         );
 
-                        if !collide_check(
-                            &world_bundle,
-                            player_positions,
-                            compute_tile_left,
-                            compute_tile_range_y,
-                        ) {
-                            player_transform.translation.x += adjusted_speed;
-                        }
+                        player_transform.translation.x += adjusted_speed * speed_through_tile;
                     }
                     _ => {}
                 });
@@ -122,69 +108,108 @@ pub fn move_player(
 }
 
 #[allow(clippy::type_complexity)]
-fn collide_check(
+fn calculate_speed_for_direction(
+    direction: Direction,
+    player_attributes: (Vec3, f32),
+    world_bundle: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
+) -> f32 {
+    let (player_position, player_radius) = player_attributes;
+
+    match direction {
+        Direction::Up => calculate_speed_through_tile(
+            world_bundle,
+            (
+                player_position.y + player_radius + COLLISION_BUFFER,
+                player_position.x - player_radius,
+                player_position.x + player_radius,
+            ),
+            compute_y_diameter_range,
+            compute_x_diameter_range,
+        ),
+        Direction::Down => calculate_speed_through_tile(
+            world_bundle,
+            (
+                player_position.y - player_radius - COLLISION_BUFFER,
+                player_position.x - player_radius,
+                player_position.x + player_radius,
+            ),
+            compute_y_diameter_range,
+            compute_x_diameter_range,
+        ),
+        Direction::Left => calculate_speed_through_tile(
+            world_bundle,
+            (
+                player_position.x - player_radius - COLLISION_BUFFER,
+                player_position.y - player_radius,
+                player_position.y + player_radius,
+            ),
+            compute_x_diameter_range,
+            compute_y_diameter_range,
+        ),
+        Direction::Right => calculate_speed_through_tile(
+            world_bundle,
+            (
+                player_position.x + player_radius + COLLISION_BUFFER,
+                player_position.y - player_radius,
+                player_position.y + player_radius,
+            ),
+            compute_x_diameter_range,
+            compute_y_diameter_range,
+        ),
+    }
+}
+
+// Collision detection and speed adjustment are both implemented with this same system.
+// 1. Iterate through each tile
+// 2. Filter out all tiles that aren't on the player's non-target axis, i.e. if you're moving up,
+//    we filter out all x tiles that don't touch the player's left OR right side.
+// 3. Traverse the remaining tiles, finding their diameter range. If the player's contact point is
+//    within that tile's diameter range, the player is "in" that tile.
+// 4. Calculate tile's speed adjustment based on which tile the player is "in".
+#[allow(clippy::type_complexity)]
+fn calculate_speed_through_tile(
     world_bundle: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
     player_positions: (f32, f32, f32),
-    compute_tile_distance: fn(Vec3, f32, f32) -> f32,
-    compute_sile_side_range: fn(Vec3, f32) -> Range<f32>,
-) -> bool {
-    let (contact_edge, player_left_side, player_right_side) = player_positions;
+    compute_target_tile_range: fn(Vec3, f32) -> Range<f32>,
+    compute_proximate_tile_range: fn(Vec3, f32) -> Range<f32>,
+) -> Speed {
+    // Contact point is a point on the player sprite's "border" that interfaces with the target tiles.
+    // i.e.
+    // If player is travelling up, contact point is the center of the top edge of the player sprite.
+    // If player is travelling left, contact point is the center of the left edge of the player sprite.
+    let (contact_point, player_left_side, player_right_side) = player_positions;
 
     for (tile_transform, sprite, tile_type) in world_bundle.iter() {
         // TODO seems costly - abstract this to resource? Or figure out single queries?
         let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
 
-        // The range from corner to corner of a given tile
-        let tile_side_range = compute_sile_side_range(tile_transform.translation, sprite_radius);
+        // Used to evaluate the opposite axis the player is trying to traverse, i.e. if player is
+        // going up (y axis), this will be evaluating each tile's x axis.
+        let proximate_tile_range =
+            compute_proximate_tile_range(tile_transform.translation, sprite_radius);
 
-        if tile_side_range.contains(&player_left_side)
-            || tile_side_range.contains(&player_right_side)
+        // If the left or right most edge of the player interacts with the tile, then it's worth
+        // evaluating further.
+        if proximate_tile_range.contains(&player_left_side)
+            || proximate_tile_range.contains(&player_right_side)
         {
-            // Distance between the y axis position of the player's top most edge and the tile's bottom most edge
-            let distance =
-                compute_tile_distance(tile_transform.translation, sprite_radius, contact_edge);
+            // Used to evaluate the target axis in the same way as described above
+            let target_tile_range =
+                compute_target_tile_range(tile_transform.translation, sprite_radius);
 
-            // TODO Rework this, it's pretty non-deterministic atm
-            if (-2.0..0.).contains(&distance) && tile_is_solid(tile_type) {
-                return true;
+            if target_tile_range.contains(&contact_point) {
+                return tile_type.speed_modifier();
             }
         }
     }
 
-    false
+    DEFAULT_SPEED
 }
 
-// TODO Move to closures just?
-fn compute_tile_top(tile_axis: Vec3, tile_radius: f32, contact_edge: f32) -> f32 {
-    (tile_axis.y + tile_radius) - contact_edge
-}
-
-fn compute_tile_bottom(tile_axis: Vec3, tile_radius: f32, contact_edge: f32) -> f32 {
-    contact_edge - (tile_axis.y - tile_radius)
-}
-
-fn compute_tile_right(tile_axis: Vec3, tile_radius: f32, contact_edge: f32) -> f32 {
-    (tile_axis.x + tile_radius) - contact_edge
-}
-
-fn compute_tile_left(tile_axis: Vec3, tile_radius: f32, contact_edge: f32) -> f32 {
-    contact_edge - (tile_axis.x - tile_radius)
-}
-
-fn compute_tile_range_x(position: Vec3, sprite_radius: f32) -> Range<f32> {
+fn compute_x_diameter_range(position: Vec3, sprite_radius: f32) -> Range<f32> {
     (position.x - sprite_radius)..(position.x + sprite_radius)
 }
 
-fn compute_tile_range_y(position: Vec3, sprite_radius: f32) -> Range<f32> {
+fn compute_y_diameter_range(position: Vec3, sprite_radius: f32) -> Range<f32> {
     (position.y - sprite_radius)..(position.y + sprite_radius)
-}
-
-fn tile_is_solid(tile_type: &TileType) -> bool {
-    match tile_type {
-        TileType::Land => false,
-        TileType::Mountain => true,
-        TileType::Water => false,
-        TileType::Building => true,
-        TileType::Unsupported => false,
-    }
 }
