@@ -21,6 +21,7 @@ enum Direction {
 // Note - it's currently decoupled from player speed, but they need to be in sync for smooth ops.
 const COLLISION_BUFFER: f32 = 3.;
 const DEFAULT_SPEED: f32 = 1.;
+const PLAYER_Z_INDEX: f32 = 2.;
 
 pub fn initialise_player(
     mut commands: Commands,
@@ -34,7 +35,7 @@ pub fn initialise_player(
 
     commands.spawn(create_player_entity(
         player_attributes,
-        Vec3::new(half_window_width, half_window_height, 1.),
+        Vec3::new(half_window_width, half_window_height, PLAYER_Z_INDEX),
     ));
 }
 
