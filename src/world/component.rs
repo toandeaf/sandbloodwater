@@ -15,6 +15,18 @@ pub enum TileType {
     Unsupported,
 }
 
+impl TileType {
+    pub fn speed_modifier(&self) -> f32 {
+        match *self {
+            TileType::Building => 0.,
+            TileType::Water => 0.3,
+            TileType::Mountain => 0.,
+            // Default is just keep the speed the same
+            _ => 1.,
+        }
+    }
+}
+
 impl FromStr for TileType {
     type Err = Error;
 
