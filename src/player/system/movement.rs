@@ -1,9 +1,8 @@
-use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
 use std::ops::Range;
 
+use bevy::prelude::*;
+
 use crate::player::component::{AnimationTimer, Player};
-use crate::player::entity::create_player_entity;
 use crate::player::resource::PlayerAttributes;
 use crate::world::TileType;
 
@@ -21,23 +20,6 @@ enum Direction {
 // Note - it's currently decoupled from player speed, but they need to be in sync for smooth ops.
 const COLLISION_BUFFER: f32 = 3.;
 const DEFAULT_SPEED: f32 = 1.;
-const PLAYER_Z_INDEX: f32 = 2.;
-
-pub fn initialise_player(
-    mut commands: Commands,
-    window_query: Query<&Window, With<PrimaryWindow>>,
-    player_attributes: Res<PlayerAttributes>,
-) {
-    let window = window_query.get_single().unwrap();
-
-    let half_window_width = window.width() / 2.;
-    let half_window_height = window.height() / 2.;
-
-    commands.spawn(create_player_entity(
-        player_attributes,
-        Vec3::new(half_window_width, half_window_height, PLAYER_Z_INDEX),
-    ));
-}
 
 // TODO work out how to properly abstract those bundles to reduce complexity
 #[allow(clippy::type_complexity)]
