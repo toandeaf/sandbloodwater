@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy::sprite::SpriteBundle;
 use bevy::utils::default;
 
-use crate::player::component::{AnimationTimer, Player};
+use crate::player::component::{AnimationTimer, CurrentDirection, Direction, Player};
 use crate::player::resource::PlayerAttributes;
 
 const ANIMATION_SPEED: f32 = 0.025;
@@ -10,8 +10,14 @@ const ANIMATION_SPEED: f32 = 0.025;
 #[derive(Bundle)]
 pub struct PlayerBundle {
     player: Player,
+    state: PlayerState,
     timer: AnimationTimer,
     sprite_bundle: SpriteBundle,
+}
+
+#[derive(Bundle)]
+pub struct PlayerState {
+    direction: CurrentDirection,
 }
 
 pub fn create_player_entity(
@@ -20,6 +26,9 @@ pub fn create_player_entity(
 ) -> PlayerBundle {
     PlayerBundle {
         player: Player,
+        state: PlayerState {
+            direction: CurrentDirection(Direction::Down),
+        },
         timer: AnimationTimer(Timer::from_seconds(ANIMATION_SPEED, TimerMode::Repeating)),
         sprite_bundle: SpriteBundle {
             transform: Transform {

@@ -2,19 +2,11 @@ use std::ops::Range;
 
 use bevy::prelude::*;
 
-use crate::player::component::{AnimationTimer, Player};
+use crate::player::component::{AnimationTimer, CurrentDirection, Direction, Player};
 use crate::player::resource::PlayerAttributes;
 use crate::world::TileType;
 
 type Speed = f32;
-
-// TODO this will probably need to get lifted out at some stage and associated with a component
-enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-}
 
 // TODO I'm hoping this isn't necessary once I crack this sticky/clippy issue with collisions.
 // Note - it's currently decoupled from player speed, but they need to be in sync for smooth ops.
@@ -28,7 +20,7 @@ pub fn move_player(
     player_attributes: Res<PlayerAttributes>,
     keyboard_input: Res<Input<KeyCode>>,
     mut player_bundle: Query<
-        (&mut Transform, &mut AnimationTimer),
+        (&mut Transform, &mut AnimationTimer, &mut CurrentDirection),
         (With<Player>, Without<TileType>),
     >,
     world_bundle: Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
@@ -36,7 +28,7 @@ pub fn move_player(
     let player_radius = player_attributes.size / 2.;
     let player_speed = player_attributes.speed;
 
-    for (mut player_transform, mut timer) in &mut player_bundle {
+    for (mut player_transform, mut timer, mut direction) in &mut player_bundle {
         let player_position = player_transform.translation;
 
         timer.tick(time.delta());
@@ -56,6 +48,7 @@ pub fn move_player(
                         );
 
                         player_transform.translation.y += adjusted_speed * speed_through_tile;
+                        direction.0 = Direction::Up;
                     }
                     KeyCode::S => {
                         let speed_through_tile = calculate_speed_for_direction(
@@ -65,6 +58,7 @@ pub fn move_player(
                         );
 
                         player_transform.translation.y -= adjusted_speed * speed_through_tile;
+                        direction.0 = Direction::Down;
                     }
                     KeyCode::A => {
                         let speed_through_tile = calculate_speed_for_direction(
@@ -74,6 +68,7 @@ pub fn move_player(
                         );
 
                         player_transform.translation.x -= adjusted_speed * speed_through_tile;
+                        direction.0 = Direction::Left;
                     }
                     KeyCode::D => {
                         let speed_through_tile = calculate_speed_for_direction(
@@ -83,6 +78,7 @@ pub fn move_player(
                         );
 
                         player_transform.translation.x += adjusted_speed * speed_through_tile;
+                        direction.0 = Direction::Right;
                     }
                     _ => {}
                 });

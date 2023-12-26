@@ -1,15 +1,17 @@
-use crate::item::component::Item;
+use crate::item::component::{Interactable, Item};
 use bevy::prelude::*;
 
 #[derive(Bundle)]
 pub struct ItemBundle {
     item: Item,
+    interactable: Interactable,
     sprite_bundle: SpriteBundle,
 }
 
 pub fn create_item_entity(starting_position: Vec3) -> ItemBundle {
     ItemBundle {
         item: Item,
+        interactable: Interactable,
         sprite_bundle: SpriteBundle {
             transform: Transform {
                 translation: starting_position,
