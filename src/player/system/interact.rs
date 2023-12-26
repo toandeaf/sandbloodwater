@@ -39,7 +39,10 @@ pub fn interact(
                             if player_x_perimeter.contains(&transform.translation.x)
                                 && player_y_perimeter.contains(&transform.translation.y)
                             {
-                                commands.get_entity(entity).unwrap().despawn();
+                                commands
+                                    .get_entity(entity)
+                                    .iter_mut()
+                                    .for_each(|entity| entity.despawn());
                             }
                         }
                     }
