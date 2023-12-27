@@ -1,9 +1,11 @@
-use crate::item::{create_item_entity, Interactable};
-use crate::player::component::{CurrentDirection, Direction, Player};
-use crate::player::resource::PlayerAttributes;
 use bevy::prelude::*;
 
+use crate::item::{create_item, Interactable};
+use crate::player::component::{CurrentDirection, Direction, Player};
+use crate::player::resource::PlayerAttributes;
+
 const INTERACTION_PERIMETER: f32 = 10.;
+const ITEM_SPAWN_SIZE: f32 = 10.;
 
 // TODO this will eventually get split out into two separate systems.
 // Eventually "interact" will yield options based on what the player can interact with.
@@ -78,5 +80,5 @@ fn spawn_item(
         Direction::Right => Vec2::new(player_position.x + player_radius, player_position.y),
     };
 
-    commands.spawn(create_item_entity(item_spawn_position));
+    create_item(commands, item_spawn_position, Some(ITEM_SPAWN_SIZE));
 }
