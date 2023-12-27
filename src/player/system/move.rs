@@ -1,43 +1,17 @@
-use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
 use std::ops::Range;
 
-use crate::player::component::{AnimationTimer, Player};
-use crate::player::entity::create_player_entity;
+use bevy::prelude::*;
+
+use crate::player::component::{AnimationTimer, CurrentDirection, Direction, Player};
 use crate::player::resource::PlayerAttributes;
 use crate::world::TileType;
 
 type Speed = f32;
 
-// TODO this will probably need to get lifted out at some stage and associated with a component
-enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-}
-
 // TODO I'm hoping this isn't necessary once I crack this sticky/clippy issue with collisions.
 // Note - it's currently decoupled from player speed, but they need to be in sync for smooth ops.
 const COLLISION_BUFFER: f32 = 3.;
 const DEFAULT_SPEED: f32 = 1.;
-const PLAYER_Z_INDEX: f32 = 2.;
-
-pub fn initialise_player(
-    mut commands: Commands,
-    window_query: Query<&Window, With<PrimaryWindow>>,
-    player_attributes: Res<PlayerAttributes>,
-) {
-    let window = window_query.get_single().unwrap();
-
-    let half_window_width = window.width() / 2.;
-    let half_window_height = window.height() / 2.;
-
-    commands.spawn(create_player_entity(
-        player_attributes,
-        Vec3::new(half_window_width, half_window_height, PLAYER_Z_INDEX),
-    ));
-}
 
 // TODO work out how to properly abstract those bundles to reduce complexity
 #[allow(clippy::type_complexity)]
@@ -46,7 +20,7 @@ pub fn move_player(
     player_attributes: Res<PlayerAttributes>,
     keyboard_input: Res<Input<KeyCode>>,
     mut player_bundle: Query<
-        (&mut Transform, &mut AnimationTimer),
+        (&mut Transform, &mut AnimationTimer, &mut CurrentDirection),
         (With<Player>, Without<TileType>),
     >,
     world_bundle: Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
@@ -54,7 +28,7 @@ pub fn move_player(
     let player_radius = player_attributes.size / 2.;
     let player_speed = player_attributes.speed;
 
-    for (mut player_transform, mut timer) in &mut player_bundle {
+    for (mut player_transform, mut timer, mut direction) in &mut player_bundle {
         let player_position = player_transform.translation;
 
         timer.tick(time.delta());
@@ -74,6 +48,7 @@ pub fn move_player(
                         );
 
                         player_transform.translation.y += adjusted_speed * speed_through_tile;
+                        direction.0 = Direction::Up;
                     }
                     KeyCode::S => {
                         let speed_through_tile = calculate_speed_for_direction(
@@ -83,6 +58,7 @@ pub fn move_player(
                         );
 
                         player_transform.translation.y -= adjusted_speed * speed_through_tile;
+                        direction.0 = Direction::Down;
                     }
                     KeyCode::A => {
                         let speed_through_tile = calculate_speed_for_direction(
@@ -92,6 +68,7 @@ pub fn move_player(
                         );
 
                         player_transform.translation.x -= adjusted_speed * speed_through_tile;
+                        direction.0 = Direction::Left;
                     }
                     KeyCode::D => {
                         let speed_through_tile = calculate_speed_for_direction(
@@ -101,6 +78,7 @@ pub fn move_player(
                         );
 
                         player_transform.translation.x += adjusted_speed * speed_through_tile;
+                        direction.0 = Direction::Right;
                     }
                     _ => {}
                 });
