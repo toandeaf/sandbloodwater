@@ -9,6 +9,8 @@ use crate::world::TileType;
 
 type Speed = f32;
 
+// TODO - Refactor this or at least split it out
+
 // TODO I'm hoping this isn't necessary once I crack this sticky/clippy issue with collisions.
 // Note - it's currently decoupled from player speed, but they need to be in sync for smooth ops.
 const COLLISION_BUFFER: f32 = 3.;
