@@ -1,3 +1,4 @@
+use crate::item::Solid;
 use bevy::prelude::*;
 
 use crate::world::component::{TileType, World};
@@ -10,17 +11,36 @@ pub struct WorldTileBundle {
     tile_type: TileType,
 }
 
-pub fn create_map_tile_entity(
+#[derive(Bundle)]
+pub struct SolidWorldTileBundle {
+    world_tile_bundle: WorldTileBundle,
+    solid: Solid,
+}
+
+const TILE_Z_INDEX: f32 = 0.;
+
+pub fn create_solid_map_tile_entity(
+    tile_position: Vec2,
     tile_size: f32,
-    starting_x: &f32,
-    starting_y: &f32,
+    tile_type: TileType,
+) -> SolidWorldTileBundle {
+    let world_tile_bundle = create_map_tile_entity(tile_position, tile_size, tile_type);
+    SolidWorldTileBundle {
+        world_tile_bundle,
+        solid: Solid,
+    }
+}
+
+pub fn create_map_tile_entity(
+    tile_position: Vec2,
+    tile_size: f32,
     tile_type: TileType,
 ) -> WorldTileBundle {
     WorldTileBundle {
         world: World,
         sprite_bundle: SpriteBundle {
             transform: Transform {
-                translation: Vec3::new(*starting_x, *starting_y, 0.),
+                translation: Vec3::from((tile_position, TILE_Z_INDEX)),
                 ..default()
             },
             sprite: Sprite {
