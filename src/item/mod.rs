@@ -3,6 +3,6 @@ mod entity;
 mod plugin;
 mod system;
 
-pub use component::Interactable;
-pub use entity::create_item_entity;
+pub use component::{Interactable, Solid};
 pub use plugin::ItemPlugin;
+pub use system::create_item;
