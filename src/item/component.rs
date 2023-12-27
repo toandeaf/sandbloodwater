@@ -4,7 +4,12 @@ use bevy::prelude::Component;
 pub struct Item;
 
 #[derive(Component)]
-pub struct Interactable;
+pub struct Solid;
 
 #[derive(Component)]
-pub struct Solid;
+pub struct Interactive(pub InteractionType);
+
+pub enum InteractionType {
+    Carry,
+    Collect,
+}
