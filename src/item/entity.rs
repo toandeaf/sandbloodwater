@@ -1,6 +1,8 @@
 use crate::item::component::{Interactable, Item};
 use bevy::prelude::*;
 
+const ITEM_Z_INDEX: f32 = 1.;
+
 #[derive(Bundle)]
 pub struct ItemBundle {
     item: Item,
@@ -8,13 +10,13 @@ pub struct ItemBundle {
     sprite_bundle: SpriteBundle,
 }
 
-pub fn create_item_entity(starting_position: Vec3) -> ItemBundle {
+pub fn create_item_entity(starting_position: Vec2) -> ItemBundle {
     ItemBundle {
         item: Item,
         interactable: Interactable,
         sprite_bundle: SpriteBundle {
             transform: Transform {
-                translation: starting_position,
+                translation: Vec3::from((starting_position, ITEM_Z_INDEX)),
                 ..default()
             },
             sprite: Sprite {
