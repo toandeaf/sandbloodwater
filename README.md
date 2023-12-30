@@ -21,22 +21,33 @@ Setting inspired by pre-Islamic North African and Middle-Easter nomadic tribes a
 * `cargo build`
 * `cargo run`
 
-### File Structuring
-I'm trying to keep consistent with bundling entity definitions on a directory to directory basis.
-
-* `component.rs` files should only contain component or enum definitions.
-* `entity.rs` files should only contain functions that yield component bundles require to spawn a given entity.
-* `plugin.rs` files should only contain plugin definitions and their `Plugin` impl.
-* `system.rs` files should only contain system functions.
-* `utils.rs` files should contain any other function that may be used by any of the other file types that don't fit any of the descriptions listed above.
-
-This is WIP, and I'll see if this structure hinders or helps me, but currently find it an appropriate way to segregate file responsibilities.
+### Project Structure
+Each top level directory should be concerned with a specific entity, which will include its component definitions, accompanying resources, its system implementation and finally its plugin abstraction.
+* `component` file or directory should only contain component or enum definitions.
+* `entity` file or directory should only contain functions that yield component bundles require to spawn a given entity.
+* `plugin` file or directory should only contain plugin definitions and their `Plugin` impl.
+* `system` file or directory should only contain system functions.
+* `resource` file or directory should contain resource definitions and helper functions to initialise a given resource.
+* `utils` file or directory should contain any other function that may be used by any of the other file types that don't fit any of the descriptions listed above.
 
 ### Milestones
 * Version 0.1.0 - Learning and Setup
-  * Set-up application infrastructure and defined file structuring.
-  * Created camera
-  * Created player - introduced sprite and implemented basic movement system.
-  * Created map - introduced map config, parse and sprite render.
+  * Set-up application infrastructure and defined file structuring
+  * Introduced static camera
+  * Introduced player - introduced sprite and implemented basic movement system
+  * Introduced map - introduced map config, parse and sprite render
 * Version 0.2.0 - Interactions and Collisions
-  * TBD!
+  * Implemented tile and item level collision detection
+  * Implemented tile based player speed adjustments
+  * Introduced "items" - small, medium and large
+  * Implemented carry on medium items
+  * Implemented pick-up and placement of small items
+  * Established "resource" file type and directory-level system bundling.
+* Version 0.3.0 - Sprites and Animations
+  * Goals: 
+    * Introduce player image
+    * Establish sprite sheet ingestion standards
+    * Implement player movement animation
+    * Implement player interaction animation
+    * Introduce better tile sprites
+    * Introduce item sprites for small, medium and large items
