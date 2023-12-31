@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 bevy = "0.12.1"
-bevy-inspector-egui = "0.21.0"
+bevy_embedded_assets = "0.9.1"
 tsv = "0.1.1"
+wasm-bindgen-cli = "0.2.89"
