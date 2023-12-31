@@ -1,5 +1,6 @@
-use bevy::prelude::*;
 use bevy::DefaultPlugins;
+use bevy::prelude::*;
+use bevy_embedded_assets::EmbeddedAssetPlugin;
 
 use crate::game::GamePlugin;
 
@@ -10,5 +11,7 @@ mod player;
 mod world;
 
 fn main() {
-    App::new().add_plugins((DefaultPlugins, GamePlugin)).run();
+    App::new()
+        .add_plugins((DefaultPlugins, EmbeddedAssetPlugin::default(), GamePlugin))
+        .run();
 }
