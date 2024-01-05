@@ -9,6 +9,6 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((CameraPlugin, PlayerPlugin, WorldPlugin, ItemPlugin));
+        app.add_plugins((WorldPlugin, CameraPlugin, PlayerPlugin, ItemPlugin));
     }
 }

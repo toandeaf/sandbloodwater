@@ -1,28 +1,30 @@
 use bevy::prelude::*;
-use bevy::sprite::SpriteBundle;
 use bevy::utils::default;
 
-use crate::player::component::{Activity, AnimationTimer, CurrentActivity, CurrentDirection, Direction, Player};
-use crate::player::resource::PlayerAttributes;
+use crate::player::component::{
+    Activity, AnimationTimer, CurrentActivity, CurrentDirection, Direction, Player,
+};
 
-const ANIMATION_SPEED: f32 = 0.025;
+// The higher this is, the slower the animation
+const ANIMATION_SPEED: f32 = 0.040;
+const PLAYER_SIZE: f32 = 40.;
 
 #[derive(Bundle)]
 pub struct PlayerBundle {
     player: Player,
     state: PlayerState,
     timer: AnimationTimer,
-    sprite_bundle: SpriteBundle,
+    sprite_bundle: SpriteSheetBundle,
 }
 
 #[derive(Bundle)]
 pub struct PlayerState {
     direction: CurrentDirection,
-    activity: CurrentActivity
+    activity: CurrentActivity,
 }
 
 pub fn create_player_entity(
-    player_attributes: Res<PlayerAttributes>,
+    texture_atlas: Handle<TextureAtlas>,
     starting_position: Vec3,
 ) -> PlayerBundle {
     PlayerBundle {
@@ -32,16 +34,16 @@ pub fn create_player_entity(
             activity: CurrentActivity(Activity::Idle),
         },
         timer: AnimationTimer(Timer::from_seconds(ANIMATION_SPEED, TimerMode::Repeating)),
-        sprite_bundle: SpriteBundle {
+        sprite_bundle: SpriteSheetBundle {
             transform: Transform {
                 translation: starting_position,
                 ..default()
             },
-            sprite: Sprite {
-                color: player_attributes.color,
-                custom_size: Some(Vec2::splat(player_attributes.size)),
+            sprite: TextureAtlasSprite {
+                custom_size: Some(Vec2::splat(PLAYER_SIZE)),
                 ..default()
             },
+            texture_atlas,
             ..default()
         },
     }
