@@ -11,9 +11,6 @@ const DEFAULT_SPEED: f32 = 1.;
 // TODO work out how to properly abstract those bundles to reduce complexity
 #[allow(clippy::type_complexity)]
 pub fn move_player(
-    time: Res<Time>,
-    player_attributes: Res<PlayerAttributes>,
-    keyboard_input: Res<Input<KeyCode>>,
     mut player_query: Query<
         (
             &mut Transform,
@@ -25,6 +22,9 @@ pub fn move_player(
     >,
     tile_query: Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
     solid_query: Query<(&Transform, &Sprite), (With<Solid>, Without<Player>)>,
+    keyboard_input: Res<Input<KeyCode>>,
+    time: Res<Time>,
+    player_attributes: Res<PlayerAttributes>,
 ) {
     let player_radius = player_attributes.size / 2.;
     let player_base_speed = player_attributes.speed;
