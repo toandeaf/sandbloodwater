@@ -50,24 +50,10 @@ impl Direction {
     }
 
     // TODO better naming for that
-    pub fn opposite_axis_sides(&self, sprite_transform: Vec3, sprite_radius: f32) -> (f32, f32) {
+    pub fn opposite_axis_sides(&self, transform: Vec3, radius: f32) -> (f32, f32) {
         match *self {
-            Direction::Up => (
-                sprite_transform.x - sprite_radius,
-                sprite_transform.x + sprite_radius,
-            ),
-            Direction::Down => (
-                sprite_transform.x - sprite_radius,
-                sprite_transform.x + sprite_radius,
-            ),
-            Direction::Left => (
-                sprite_transform.y - sprite_radius,
-                sprite_transform.y + sprite_radius,
-            ),
-            Direction::Right => (
-                sprite_transform.y - sprite_radius,
-                sprite_transform.y + sprite_radius,
-            ),
+            Direction::Up | Direction::Down => (transform.x - radius, transform.x + radius),
+            Direction::Left | Direction::Right => (transform.y - radius, transform.y + radius),
         }
     }
 
