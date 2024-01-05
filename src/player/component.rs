@@ -49,6 +49,7 @@ impl Direction {
         }
     }
 
+    // TODO better naming for that
     pub fn opposite_axis_sides(&self, sprite_transform: Vec3, sprite_radius: f32) -> (f32, f32) {
         match *self {
             Direction::Up => (
@@ -70,21 +71,17 @@ impl Direction {
         }
     }
 
-    pub fn compute_target_range(&self, sprite_transform: Vec3, sprite_radius: f32) -> Range<f32> {
+    pub fn compute_target_range(&self, transform: Vec3, radius: f32) -> Range<f32> {
         match *self {
-            Direction::Up => compute_y_diameter_range(sprite_transform, sprite_radius),
-            Direction::Down => compute_y_diameter_range(sprite_transform, sprite_radius),
-            Direction::Left => compute_x_diameter_range(sprite_transform, sprite_radius),
-            Direction::Right => compute_x_diameter_range(sprite_transform, sprite_radius),
+            Direction::Up | Direction::Down => (transform.y - radius)..(transform.y + radius),
+            Direction::Left | Direction::Right => (transform.x - radius)..(transform.x + radius),
         }
     }
 
-    pub fn compute_proxy_range(&self, sprite_transform: Vec3, sprite_radius: f32) -> Range<f32> {
+    pub fn compute_proxy_range(&self, transform: Vec3, radius: f32) -> Range<f32> {
         match *self {
-            Direction::Up => compute_x_diameter_range(sprite_transform, sprite_radius),
-            Direction::Down => compute_x_diameter_range(sprite_transform, sprite_radius),
-            Direction::Left => compute_y_diameter_range(sprite_transform, sprite_radius),
-            Direction::Right => compute_y_diameter_range(sprite_transform, sprite_radius),
+            Direction::Up | Direction::Down => (transform.x - radius)..(transform.x + radius),
+            Direction::Left | Direction::Right => (transform.y - radius)..(transform.y + radius),
         }
     }
 
@@ -98,12 +95,4 @@ impl Direction {
 
         sprite_transform
     }
-}
-
-fn compute_x_diameter_range(position: Vec3, sprite_radius: f32) -> Range<f32> {
-    (position.x - sprite_radius)..(position.x + sprite_radius)
-}
-
-fn compute_y_diameter_range(position: Vec3, sprite_radius: f32) -> Range<f32> {
-    (position.y - sprite_radius)..(position.y + sprite_radius)
 }
