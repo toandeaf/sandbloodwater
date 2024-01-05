@@ -1,5 +1,3 @@
-use std::ops::Range;
-
 use bevy::prelude::*;
 
 use crate::item::Solid;
@@ -8,10 +6,6 @@ use crate::player::resource::PlayerAttributes;
 use crate::world::TileType;
 
 type Speed = f32;
-
-// TODO I'm hoping this isn't necessary once I crack this sticky/clippy issue with collisions.
-// Note - it's currently decoupled from player speed, but they need to be in sync for smooth ops.
-const COLLISION_BUFFER: f32 = 3.;
 const DEFAULT_SPEED: f32 = 1.;
 
 // TODO work out how to properly abstract those bundles to reduce complexity
@@ -20,140 +14,70 @@ pub fn move_player(
     time: Res<Time>,
     player_attributes: Res<PlayerAttributes>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut player_bundle: Query<
-        (&mut Transform, &mut AnimationTimer, &mut CurrentDirection),
+    mut player_query: Query<
+        (
+            &mut Transform,
+            &mut AnimationTimer,
+            &mut CurrentDirection,
+            &mut TextureAtlasSprite,
+        ),
         (With<Player>, Without<TileType>),
     >,
-    tile_bundle: Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
-    solids_bundle: Query<(&Transform, &Sprite), (With<Solid>, Without<Player>)>,
+    tile_query: Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
+    solid_query: Query<(&Transform, &Sprite), (With<Solid>, Without<Player>)>,
 ) {
     let player_radius = player_attributes.size / 2.;
-    let player_speed = player_attributes.speed;
+    let player_base_speed = player_attributes.speed;
 
-    for (mut player_transform, mut timer, mut direction) in &mut player_bundle {
-        let player_position = player_transform.translation;
-
+    for (mut player_transform, mut timer, mut current_direction, mut movement_sprite_sheet) in
+        &mut player_query
+    {
         timer.tick(time.delta());
 
         if timer.just_finished() {
-            let time_delta = time.delta_seconds();
-            let adjusted_speed = player_speed * time_delta;
+            keyboard_input.get_pressed().for_each(|key_pressed| {
+                let new_direction_opt = match key_pressed {
+                    KeyCode::W => Some(Direction::Up),
+                    KeyCode::S => Some(Direction::Down),
+                    KeyCode::A => Some(Direction::Left),
+                    KeyCode::D => Some(Direction::Right),
+                    _ => None,
+                };
 
-            keyboard_input
-                .get_pressed()
-                .for_each(|key_pressed| match key_pressed {
-                    KeyCode::W => {
-                        direction.0 = Direction::Up;
+                // No direction dictated - yeet out.
+                if new_direction_opt.is_none() {
+                    return;
+                }
 
-                        let speed_through_tile =
-                            calculate_collision_or_speed_adjustment_for_direction(
-                                &tile_bundle,
-                                &solids_bundle,
-                                (player_position, player_radius),
-                                Direction::Up,
-                            );
+                // New direction dictated - apply to state.
+                if let Some(new_direction) = new_direction_opt {
+                    current_direction.0 = new_direction;
+                }
 
-                        player_transform.translation.y += adjusted_speed * speed_through_tile;
-                    }
-                    KeyCode::S => {
-                        direction.0 = Direction::Down;
+                let direction = &current_direction.0;
 
-                        let speed_through_tile =
-                            calculate_collision_or_speed_adjustment_for_direction(
-                                &tile_bundle,
-                                &solids_bundle,
-                                (player_position, player_radius),
-                                Direction::Down,
-                            );
+                let player_data = (player_transform.translation, player_radius);
 
-                        player_transform.translation.y -= adjusted_speed * speed_through_tile;
-                    }
-                    KeyCode::A => {
-                        direction.0 = Direction::Left;
+                let speed_modifier = calculate_collision_or_speed_adjustment(
+                    &tile_query,
+                    &solid_query,
+                    player_data,
+                    direction,
+                );
 
-                        let speed_through_tile =
-                            calculate_collision_or_speed_adjustment_for_direction(
-                                &tile_bundle,
-                                &solids_bundle,
-                                (player_position, player_radius),
-                                Direction::Left,
-                            );
+                // Player's attribute speed multiplied by the speed adjustment from the tile contact.
+                // The time.delta_seconds is to enforce the "real" speed. If we don't factor in
+                // actual time into the computation, the clock speed of the processor will have an
+                // effect on the actual speed of the game lol.
+                let new_speed = player_base_speed * speed_modifier * time.delta_seconds();
 
-                        player_transform.translation.x -= adjusted_speed * speed_through_tile;
-                    }
-                    KeyCode::D => {
-                        direction.0 = Direction::Right;
+                movement_sprite_sheet.index =
+                    calculate_next_sprite(direction, &movement_sprite_sheet.index);
 
-                        let speed_through_tile =
-                            calculate_collision_or_speed_adjustment_for_direction(
-                                &tile_bundle,
-                                &solids_bundle,
-                                (player_position, player_radius),
-                                Direction::Right,
-                            );
-
-                        player_transform.translation.x += adjusted_speed * speed_through_tile;
-                    }
-                    _ => {}
-                });
+                player_transform.translation =
+                    direction.new_position(player_transform.translation, new_speed);
+            });
         }
-    }
-}
-
-#[allow(clippy::type_complexity)]
-fn calculate_collision_or_speed_adjustment_for_direction(
-    tile_bundle: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
-    solid_bundle: &Query<(&Transform, &Sprite), (With<Solid>, Without<Player>)>,
-    player_attributes: (Vec3, f32),
-    direction: Direction,
-) -> Speed {
-    let (player_position, player_radius) = player_attributes;
-
-    match direction {
-        Direction::Up => calculate_collision_or_speed_adjustment(
-            tile_bundle,
-            solid_bundle,
-            (
-                player_position.y + player_radius + COLLISION_BUFFER,
-                player_position.x - player_radius,
-                player_position.x + player_radius,
-            ),
-            compute_y_diameter_range,
-            compute_x_diameter_range,
-        ),
-        Direction::Down => calculate_collision_or_speed_adjustment(
-            tile_bundle,
-            solid_bundle,
-            (
-                player_position.y - player_radius - COLLISION_BUFFER,
-                player_position.x - player_radius,
-                player_position.x + player_radius,
-            ),
-            compute_y_diameter_range,
-            compute_x_diameter_range,
-        ),
-        Direction::Left => calculate_collision_or_speed_adjustment(
-            tile_bundle,
-            solid_bundle,
-            (
-                player_position.x - player_radius - COLLISION_BUFFER,
-                player_position.y - player_radius,
-                player_position.y + player_radius,
-            ),
-            compute_x_diameter_range,
-            compute_y_diameter_range,
-        ),
-        Direction::Right => calculate_collision_or_speed_adjustment(
-            tile_bundle,
-            solid_bundle,
-            (
-                player_position.x + player_radius + COLLISION_BUFFER,
-                player_position.y - player_radius,
-                player_position.y + player_radius,
-            ),
-            compute_x_diameter_range,
-            compute_y_diameter_range,
-        ),
     }
 }
 
@@ -168,19 +92,17 @@ fn calculate_collision_or_speed_adjustment_for_direction(
 //    relevant "side" -> return tile specific speed modifier.
 #[allow(clippy::type_complexity)]
 fn calculate_collision_or_speed_adjustment(
-    tile_bundle: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
-    solid_bundle: &Query<(&Transform, &Sprite), (With<Solid>, Without<Player>)>,
-    player_positions: (f32, f32, f32),
-    compute_target_tile_range: fn(Vec3, f32) -> Range<f32>,
-    compute_proximate_tile_range: fn(Vec3, f32) -> Range<f32>,
+    tile_query: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
+    solid_query: &Query<(&Transform, &Sprite), (With<Solid>, Without<Player>)>,
+    player_data: (Vec3, f32),
+    direction: &Direction,
 ) -> Speed {
-    for (target_transform, sprite) in solid_bundle.iter() {
+    for (target_transform, sprite) in solid_query.iter() {
         // Seeing if the player interacts with any "Solid" components first.
         let collision_eval = detect_player_component_interaction(
-            player_positions,
+            player_data,
             (target_transform, sprite),
-            compute_target_tile_range,
-            compute_proximate_tile_range,
+            direction,
             None,
         );
 
@@ -192,13 +114,12 @@ fn calculate_collision_or_speed_adjustment(
 
     // If player hasn't collided with anything, we'll see what tile they're on and whether
     // that should affect the speed.
-    for (tile_transform, sprite, tile_type) in tile_bundle.iter() {
+    for (tile_transform, sprite, tile_type) in tile_query.iter() {
         // Same component iteration logic, except we're going through the remaining tiles now
         let speed_change_eval = detect_player_component_interaction(
-            player_positions,
+            player_data,
             (tile_transform, sprite),
-            compute_target_tile_range,
-            compute_proximate_tile_range,
+            direction,
             Some(tile_type),
         );
 
@@ -212,25 +133,27 @@ fn calculate_collision_or_speed_adjustment(
 }
 
 fn detect_player_component_interaction(
-    player_positions: (f32, f32, f32),
+    player_data: (Vec3, f32),
     target_data: (&Transform, &Sprite),
-    compute_target_tile_range: fn(Vec3, f32) -> Range<f32>,
-    compute_proximate_tile_range: fn(Vec3, f32) -> Range<f32>,
+    direction: &Direction,
     tile_type: Option<&TileType>,
 ) -> Option<Speed> {
-    // Contact point is a point on the player sprite's "border" that interfaces with the target tiles.
-    // i.e.
-    // If player is travelling up, contact point is the center of the top edge of the player sprite.
-    // If player is travelling left, contact point is the center of the left edge of the player sprite.
-    let (contact_point, player_left_side, player_right_side) = player_positions;
-
+    // Deconstruct
     let (transform, sprite) = target_data;
+
+    // Contact point is a point on the player sprite's "border" that interfaces with the target tiles.
+    // i.e. If player is travelling up, contact point is the center of the top edge of the player sprite.
+    // i.e. If player is travelling left, contact point is the center of the left edge of the player sprite.
+    let contact_point = direction.contact_point(player_data.0, player_data.1);
+
+    let (player_left_side, player_right_side) =
+        direction.opposite_axis_sides(player_data.0, player_data.1);
 
     let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
 
-    // Used to evaluate the opposite axis the player is trying to traverse, i.e. if player is
-    // going up (y axis), this will be evaluating each tile's x axis.
-    let proximate_tile_range = compute_proximate_tile_range(transform.translation, sprite_radius);
+    // Used to evaluate the opposite axis the player is trying to traverse,
+    // i.e. if player is going up (y axis), this will be evaluating each tile's x axis.
+    let proximate_tile_range = direction.compute_proxy_range(transform.translation, sprite_radius);
 
     // If the left or right most edge of the player interacts with the tile, then it's worth
     // evaluating further.
@@ -238,7 +161,8 @@ fn detect_player_component_interaction(
         || proximate_tile_range.contains(&player_right_side)
     {
         // Used to evaluate the target axis in the same way as described above
-        let target_tile_range = compute_target_tile_range(transform.translation, sprite_radius);
+        let target_tile_range =
+            direction.compute_target_range(transform.translation, sprite_radius);
 
         if target_tile_range.contains(&contact_point) {
             return Some(
@@ -252,10 +176,18 @@ fn detect_player_component_interaction(
     None
 }
 
-fn compute_x_diameter_range(position: Vec3, sprite_radius: f32) -> Range<f32> {
-    (position.x - sprite_radius)..(position.x + sprite_radius)
-}
-
-fn compute_y_diameter_range(position: Vec3, sprite_radius: f32) -> Range<f32> {
-    (position.y - sprite_radius)..(position.y + sprite_radius)
+// I'll probably move away from coupling the texture atlas indices per direction with
+// the actual direction enum itself. Probably build an abstraction around the texture atlas itself?
+fn calculate_next_sprite(direction: &Direction, current_sprite_index: &usize) -> usize {
+    // Check index range of current direction, if the current sprite index isn't within that
+    // range then the direction has been changed, and the new index retured should be the first
+    // index of our new direction.
+    // Basically "Are we animating in the right direction? If no, start new direction animation.
+    if !direction.sprite_indices().contains(current_sprite_index) {
+        direction.sprite_indices().start
+    } else {
+        // In this block we *are* going in the same index, so we're basically going to the next frame
+        // in the animation sheet by incrementing the current index.
+        current_sprite_index + 1
+    }
 }
