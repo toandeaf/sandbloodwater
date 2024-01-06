@@ -4,7 +4,6 @@ use crate::item::{create_item, InteractionType, Interactive, Item};
 use crate::player::component::{Activity, CurrentActivity, CurrentDirection, Direction, Player};
 use crate::player::resource::PlayerAttributes;
 
-const INTERACTION_PERIMETER: f32 = 10.;
 const ITEM_SPAWN_SIZE: f32 = 10.;
 
 // TODO this will eventually get split out into two separate systems.
@@ -33,6 +32,7 @@ pub fn interact(
             player_radius,
             player_entity,
             &current_activity.0,
+            &current_direction.0,
         );
 
         if keyboard_input.just_pressed(KeyCode::E) {
@@ -63,9 +63,10 @@ fn interact_with_item(
     commands: &mut Commands,
     carrying_query: &Query<&Children, With<Player>>,
     item_query: &Query<(&Transform, Entity, &Interactive), With<Item>>,
-    player_data: (Vec3, f32, Entity, &Activity),
+    player_data: (Vec3, f32, Entity, &Activity, &Direction),
 ) -> Option<Activity> {
-    let (player_position, player_radius, player_entity, player_activity) = player_data;
+    let (player_position, player_radius, player_entity, player_activity, player_direction) =
+        player_data;
 
     // If the player is already carrying something, pressing this button will make them "drop" it.
     if let Activity::Carrying = player_activity {
@@ -81,15 +82,12 @@ fn interact_with_item(
         return Some(Activity::Idle);
     };
 
-    let player_y_perimeter = player_position.y - (player_radius + INTERACTION_PERIMETER)
-        ..player_position.y + (player_radius + INTERACTION_PERIMETER);
-
-    let player_x_perimeter = player_position.x - (player_radius + INTERACTION_PERIMETER)
-        ..player_position.x + (player_radius + INTERACTION_PERIMETER);
+    // TODO rework interaction box, should be able to pick up stuff within the front of your sprite.
+    let interaction_box = player_direction.interaction_box(player_position, player_radius);
 
     for (transform, entity, interactive) in item_query.iter() {
-        if player_x_perimeter.contains(&transform.translation.x)
-            && player_y_perimeter.contains(&transform.translation.y)
+        if interaction_box.x.contains(&transform.translation.x)
+            && interaction_box.y.contains(&transform.translation.y)
         {
             match interactive.0 {
                 InteractionType::Collect => {
