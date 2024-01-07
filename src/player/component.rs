@@ -83,8 +83,15 @@ impl Direction {
     }
 
     pub fn contact_position(&self, sprite_transform: Vec3, sprite_radius: f32) -> Vec3 {
-        let contact_position = Vec3::from(sprite_transform);
-        self.contact_point(contact_position, sprite_radius);
+        let mut contact_position = sprite_transform;
+        match *self {
+            Direction::Up | Direction::Down => {
+                contact_position.y = self.contact_point(sprite_transform, sprite_radius)
+            }
+            Direction::Left | Direction::Right => {
+                contact_position.x = self.contact_point(sprite_transform, sprite_radius)
+            }
+        };
         contact_position
     }
 

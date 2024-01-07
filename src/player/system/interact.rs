@@ -46,8 +46,9 @@ fn interact_with_item(
         if interaction_box.x.contains(&transform.translation.x)
             && interaction_box.y.contains(&transform.translation.y)
         {
-            let new_position = player_direction.relative_child_direction_change(player_radius);
-            event_writer.send(InteractionEvent(player_entity, entity, new_position));
+            let contact_position =
+                player_direction.contact_position(player_position, player_radius);
+            event_writer.send(InteractionEvent(player_entity, entity, contact_position));
         }
     }
 

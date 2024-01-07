@@ -10,7 +10,7 @@ const LARGE_ITEM_SIZE_MINIMUM: f32 = 20.;
 
 pub fn initialise_item(mut commands: Commands) {
     create_item(&mut commands, Vec2::new(100., 100.), None);
-    create_item(&mut commands, Vec2::new(200., 100.), Some(15.));
+    create_item(&mut commands, Vec2::new(200., 100.), Some(19.));
     create_item(&mut commands, Vec2::new(200., 200.), Some(30.));
 }
 
