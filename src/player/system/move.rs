@@ -9,7 +9,6 @@ pub type Speed = f32;
 const DEFAULT_SPEED: f32 = 1.;
 const DEFAULT_COLLISION_SPEED: Speed = 0.;
 
-// TODO how do these fit into the file structuring? Should events be top level?
 #[derive(Event)]
 pub struct MovementEvent(pub Direction, pub Speed);
 
@@ -27,7 +26,7 @@ pub fn move_player(
     time: Res<Time>,
     player_attributes: Res<PlayerAttributes>,
 ) {
-    let player_radius = player_attributes.size / 2.;
+    let player_radius = player_attributes.radius;
     let player_base_speed = player_attributes.speed;
 
     for (player_transform, mut timer) in &mut player_query {
@@ -74,7 +73,7 @@ pub fn move_player(
 // 6. Seem filter and evaluations as steps 2. and 3.
 // 7. If there is an overlap of the player contact point with entity's (tile here)
 //    relevant "side" -> return tile specific speed modifier.
-#[allow(clippy::type_complexity)]
+
 fn calculate_collision_or_speed_adjustment(
     tile_query: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
     solid_query: &Query<(&Transform, &Sprite), (With<Solid>, Without<Player>)>,

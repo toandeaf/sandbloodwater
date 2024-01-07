@@ -23,6 +23,7 @@ pub enum Direction {
 #[derive(Component)]
 pub struct CurrentActivity(pub Activity);
 
+#[derive(PartialEq)]
 pub enum Activity {
     Idle,
     Carrying,
@@ -79,6 +80,12 @@ impl Direction {
             Direction::Left => sprite_transform.x - sprite_radius - COLLISION_BUFFER,
             Direction::Right => sprite_transform.x + sprite_radius + COLLISION_BUFFER,
         }
+    }
+
+    pub fn contact_position(&self, sprite_transform: Vec3, sprite_radius: f32) -> Vec3 {
+        let contact_position = Vec3::from(sprite_transform);
+        self.contact_point(contact_position, sprite_radius);
+        contact_position
     }
 
     pub fn relative_child_direction_change(&self, radius: f32) -> Vec3 {

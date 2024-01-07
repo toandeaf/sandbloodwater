@@ -5,10 +5,8 @@ use crate::player::component::{CurrentDirection, Direction, Player};
 use crate::player::resource::PlayerAttributes;
 use crate::player::system::r#move::MovementEvent;
 
-// TODO refactor and rename these files. Probably have to set up a new standard for events?
-
 #[allow(clippy::type_complexity)]
-pub fn move_reader(
+pub fn process_position_change(
     mut event_reader: EventReader<MovementEvent>,
     mut player_query: Query<
         (
@@ -39,7 +37,7 @@ pub fn move_reader(
     }
 }
 
-pub fn process_movement(
+pub fn process_direction_change(
     mut event_reader: EventReader<MovementEvent>,
     mut item_query: Query<&mut Transform, (With<Item>, With<Parent>)>,
     player_attributes: Res<PlayerAttributes>,
