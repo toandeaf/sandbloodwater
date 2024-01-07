@@ -1,26 +1,28 @@
 use std::str::from_utf8;
 
-use bevy::utils::thiserror;
 use bevy::{
-    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
+    asset::{AssetLoader, AsyncReadExt, io::Reader, LoadContext},
     prelude::*,
     reflect::TypePath,
     utils::BoxedFuture,
 };
+use bevy::utils::thiserror;
 use thiserror::Error;
 
 use crate::world::utils::load_map_config_from_file;
-use crate::world::TileType;
 
 // TODO - half considering introducing `asset.rs` as its own standard. Don't like muddying resources with it.
 #[derive(Asset, TypePath, Clone)]
-pub struct MapContent {
-    pub map_matrix: Vec<Vec<TileType>>,
+pub struct MapLayout {
+    pub map_matrix: Vec<Vec<usize>>,
 }
 
 #[derive(Resource, Default)]
 pub struct MapState {
-    pub handle: Handle<MapContent>,
+    pub land_handle: Handle<MapLayout>,
+    pub solid_handle: Handle<MapLayout>,
+    pub water_handle: Handle<MapLayout>,
+    pub texture_handle: Handle<TextureAtlas>,
     pub applied: bool,
 }
 
@@ -37,7 +39,7 @@ pub enum CustomAssetLoaderError {
 // functions.
 impl AssetLoader for MapLoader {
     // Should represent the asset type that it'll generate. Has to be an Asset.
-    type Asset = MapContent;
+    type Asset = MapLayout;
     // Don't need this, currently aren't using settings.
     type Settings = ();
     type Error = CustomAssetLoaderError;
@@ -63,13 +65,13 @@ impl AssetLoader for MapLoader {
 
             let map_matrix = load_map_config_from_file(vals);
 
-            Ok(MapContent { map_matrix })
+            Ok(MapLayout { map_matrix })
         })
     }
 
     // This is used to determine which loader gets allocated when we call `asset_server.load`.
     // If the file extension ends in tsv, we use this map loader. Pretty cool way implementation tbh.
     fn extensions(&self) -> &[&str] {
-        &["tsv"]
+        &["csv"]
     }
 }

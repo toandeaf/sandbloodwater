@@ -1,5 +1,6 @@
-use crate::item::component::{InteractionType, Interactive, Item, Solid};
 use bevy::prelude::*;
+
+use crate::item::component::{InteractionType, Interactive, Item, Solid};
 
 const ITEM_Z_INDEX: f32 = 1.;
 
@@ -27,16 +28,20 @@ pub struct LargeItemBundle {
     solid: Solid,
 }
 
-fn create_item_entity(starting_position: Vec2, size: f32) -> ItemBundle {
+fn create_item_entity(
+    starting_position: Vec2,
+    size: f32,
+    image_handle: Handle<Image>,
+) -> ItemBundle {
     ItemBundle {
         item: Item,
         sprite_bundle: SpriteBundle {
+            texture: image_handle,
             transform: Transform {
                 translation: Vec3::from((starting_position, ITEM_Z_INDEX)),
                 ..default()
             },
             sprite: Sprite {
-                color: Color::BLUE,
                 custom_size: Some(Vec2::splat(size)),
                 ..default()
             },
@@ -45,24 +50,36 @@ fn create_item_entity(starting_position: Vec2, size: f32) -> ItemBundle {
     }
 }
 
-pub fn create_small_item_entity(starting_position: Vec2, size: f32) -> SmallItemBundle {
-    let item_bundle = create_item_entity(starting_position, size);
+pub fn create_small_item_entity(
+    starting_position: Vec2,
+    size: f32,
+    image_handle: Handle<Image>,
+) -> SmallItemBundle {
+    let item_bundle = create_item_entity(starting_position, size, image_handle);
     SmallItemBundle {
         item_bundle,
         interactive: Interactive(InteractionType::Collect),
     }
 }
 
-pub fn create_medium_item_entity(starting_position: Vec2, size: f32) -> MediumItemBundle {
-    let item_bundle = create_item_entity(starting_position, size);
+pub fn create_medium_item_entity(
+    starting_position: Vec2,
+    size: f32,
+    image_handle: Handle<Image>,
+) -> MediumItemBundle {
+    let item_bundle = create_item_entity(starting_position, size, image_handle);
     MediumItemBundle {
         item_bundle,
         interactive: Interactive(InteractionType::Carry),
     }
 }
 
-pub fn create_large_item_entity(starting_position: Vec2, size: f32) -> LargeItemBundle {
-    let item_bundle = create_item_entity(starting_position, size);
+pub fn create_large_item_entity(
+    starting_position: Vec2,
+    size: f32,
+    image_handle: Handle<Image>,
+) -> LargeItemBundle {
+    let item_bundle = create_item_entity(starting_position, size, image_handle);
     LargeItemBundle {
         item_bundle,
         solid: Solid,

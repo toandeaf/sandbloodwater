@@ -1,5 +1,6 @@
-use crate::camera::system::initialise_camera;
 use bevy::prelude::{App, Plugin, Startup};
+
+use crate::camera::system::initialise_camera;
 
 pub struct CameraPlugin;
 
