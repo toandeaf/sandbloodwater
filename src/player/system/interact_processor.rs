@@ -4,7 +4,7 @@ use crate::item::{InteractionType, Interactive, Item};
 use crate::player::component::{Activity, CurrentActivity, Player};
 use crate::player::system::interact::InteractionEvent;
 
-pub fn process_interaction(
+pub fn process_interact(
     mut commands: Commands,
     mut event_reader: EventReader<InteractionEvent>,
     mut player_query: Query<&mut CurrentActivity, With<Player>>,
