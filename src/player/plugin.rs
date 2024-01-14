@@ -2,8 +2,8 @@ use bevy::prelude::{App, Main, Plugin, Startup};
 
 use crate::player::resource::create_player_resources;
 use crate::player::system::{
-    drop, DropEvent, initialise_player, interact, InteractionEvent, move_player,
-    MovementEvent, process_direction_change, process_drop, process_interact, process_position_change,
+    drop, initialise_player, interact, move_player, process_direction_change, process_drop,
+    process_interact, process_position_change, DropEvent, InteractionEvent, MovementEvent,
 };
 
 pub struct PlayerPlugin;

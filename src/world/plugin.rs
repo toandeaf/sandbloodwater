@@ -14,8 +14,5 @@ impl Plugin for WorldPlugin {
             .init_asset_loader::<MapLoader>()
             .add_systems(Startup, init_map_assets)
             .add_systems(Update, process_map_asset_init);
-        // I'm not a fan of this implementation. Even though I've the "is loaded" check
-        // in the initialise map function itself, it just feels massively redundant.
-        // TODO replace this with an event driven function that's only initialised on asset load
     }
 }

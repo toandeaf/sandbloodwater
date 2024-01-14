@@ -8,8 +8,11 @@ use crate::world::TileType;
 const TILE_SIZE: f32 = 30.0;
 const EMPTY_TILE_INDEX: usize = 460;
 
-// TODO biggest blocker - it looks like the "land" layer is overriding the collision detection.
-// The tile collision works "fine" when the land layer isn't present.
+// Event reader is listening for asset creation events. This happens the moment we invoke and process
+// `asset_serer.load`. When an asset is loaded, the handle is returned. We're essentially "caching" these
+// handles when we allocate and insert them into the system as resources. Then we're able to inject resources
+// into our various system functions, like the below.
+// So what we're doing here is - when the assets are good to go, apply them!
 pub fn process_map_asset_init(
     mut reader: EventReader<AssetEvent<MapLayout>>,
     mut commands: Commands,
@@ -19,15 +22,16 @@ pub fn process_map_asset_init(
     for event in reader.read() {
         let texture_handle = &map_state.texture_handle;
 
-        let (map_content_opt, tile_type) = if event.is_added(map_state.land_handle.id()) {
-            (map_layouts.get(&map_state.land_handle), TileType::Land)
-        } else if event.is_added(map_state.water_handle.id()) {
-            (map_layouts.get(&map_state.water_handle), TileType::Water)
-        } else if event.is_added(map_state.solid_handle.id()) {
-            (map_layouts.get(&map_state.solid_handle), TileType::Mountain)
-        } else {
-            (None, TileType::Unsupported)
-        };
+        let (map_content_opt, tile_type) =
+            if event.is_loaded_with_dependencies(map_state.land_handle.id()) {
+                (map_layouts.get(&map_state.land_handle), TileType::Land)
+            } else if event.is_loaded_with_dependencies(map_state.water_handle.id()) {
+                (map_layouts.get(&map_state.water_handle), TileType::Water)
+            } else if event.is_loaded_with_dependencies(map_state.solid_handle.id()) {
+                (map_layouts.get(&map_state.solid_handle), TileType::Mountain)
+            } else {
+                (None, TileType::Unsupported)
+            };
 
         render_map_by_layer(&mut commands, texture_handle, map_content_opt, tile_type);
     }
@@ -47,6 +51,9 @@ pub fn render_map_by_layer(
 
         for row in matrix {
             for tile_index in row {
+                // This will probably go when we refactor the map implementation. But the long and
+                // short of it is -> if tile is "invisible" we don't spawn the component.
+                // But we still need to increment on the placement.
                 if !tile_index.eq(&EMPTY_TILE_INDEX) {
                     let tile_bundle = create_map_tile_entity(
                         Vec3::new(starting_x, starting_y, 0.),

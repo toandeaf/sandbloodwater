@@ -3,7 +3,7 @@ use bevy::utils::petgraph::matrix_graph::Zero;
 
 use crate::item::Solid;
 use crate::world::component::TileType;
-use crate::world::entity::TileBundle::SolidTileBundle;
+use crate::world::entity::TileBundle::{NormalTileBundle, SolidTileBundle};
 
 #[derive(Bundle)]
 pub struct WorldTileBundle {
@@ -53,5 +53,5 @@ pub fn create_map_tile_entity(
         });
     };
 
-    TileBundle::NormalTileBundle(world_tile_bundle)
+    NormalTileBundle(world_tile_bundle)
 }

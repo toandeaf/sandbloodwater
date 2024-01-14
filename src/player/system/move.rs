@@ -71,8 +71,7 @@ pub fn move_player(
 // 4. If there is an overlap of player contact point with entity's relevant "side" -> return 0 speed modifier.
 // 5. Iterate through all tile map entities.
 // 6. Seem filter and evaluations as steps 2. and 3.
-// 7. If there is an overlap of the player contact point with entity's (tile here)
-//    relevant "side" -> return tile specific speed modifier.
+// 7. If there is an overlap of the player contact point with entity's (tile here) relevant "side" -> return tile specific speed modifier.
 fn calculate_collision_or_speed_adjustment(
     tile_query: &Query<(&Transform, &TextureAtlasSprite, &TileType), With<TileType>>,
     solid_query: &Query<(&Transform, &Sprite), (With<Solid>, Without<Player>)>,
@@ -95,6 +94,19 @@ fn calculate_collision_or_speed_adjustment(
     // If player hasn't collided with anything, we'll see what tile they're on and whether
     // that should affect the speed.
     for (tile_transform, sprite, tile_type) in tile_query.iter() {
+        // TODO rework map implementation. Just skipping "land" tiles for time being.
+        // Because of how solids/mountain/water etc need to be "on" land (for it not to look shit)
+        // when we're doing collision detection here we're iterating through the tiles the player
+        // is "touching" and hitting Land tiles first. Lands speed modifier is 1, ergo 1 is speed mod.
+        // It yeets out of the iter once we hit the first tile, despite the fact that the second tile is
+        // water/mountain etc.
+        // Was considering having land as z-index 0., all other "solid" tiles being 1. and then filtering
+        // But feel like this should be best handled with a proper component implementation.
+        // Possibly consolidate these two queries?? solid + tile?
+        if let TileType::Land = tile_type {
+            continue;
+        }
+
         let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
 
         // Same component iteration logic, except we're going through the remaining tiles now

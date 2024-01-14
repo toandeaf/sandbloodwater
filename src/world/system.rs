@@ -4,8 +4,13 @@ use bevy::sprite::TextureAtlas;
 
 use crate::world::resource::{MapHandles, MapLayout};
 
-// Uses the asset server and the custom asset loader defined in world::resource to parse the tsv
-// file and process the values into the Vec<Vec<TileType>> data structure.
+// First go at asset + resource loading.
+// 1. Load the texture atlas image file into the asset server and are returned an image handle.
+// 2. Generate a texture atlas handle using file specific texture atlas params and the image handle described above.
+// 3. Add the texture atlas handle to the texture atlas assets resource.
+// 4. Load each of the map layer csv files and hold onto their "MapLayout" handles.
+// 5. Pull all the relevant handles into a single "MapHandles" struct.
+// 6. Insert the "MapHandles" struct resource into the system. Making it available and firing off an "asset creation event".
 pub fn init_map_assets(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -23,12 +28,12 @@ pub fn init_map_assets(
     let solid_handle: Handle<MapLayout> = asset_server.load("embedded://solid_layer.csv");
     let water_handle: Handle<MapLayout> = asset_server.load("embedded://water_layer.csv");
 
-    let map_state = MapHandles {
+    let map_handles = MapHandles {
         water_handle,
         land_handle,
         solid_handle,
         texture_handle,
     };
 
-    commands.insert_resource(map_state);
+    commands.insert_resource(map_handles);
 }
