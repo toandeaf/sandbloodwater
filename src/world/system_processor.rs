@@ -48,20 +48,12 @@ pub fn render_map_by_layer(
         for row in matrix {
             for tile_index in row {
                 if !tile_index.eq(&EMPTY_TILE_INDEX) {
-                    let tile_params = (
+                    let tile_bundle = create_map_tile_entity(
                         Vec3::new(starting_x, starting_y, 0.),
                         TILE_SIZE,
                         tile_type,
                         tile_index,
                         texture_handle.clone(),
-                    );
-
-                    let tile_bundle = create_map_tile_entity(
-                        tile_params.0,
-                        tile_params.1,
-                        tile_params.2,
-                        tile_params.3,
-                        tile_params.4,
                     );
 
                     match tile_bundle {
