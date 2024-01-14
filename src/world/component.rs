@@ -3,9 +3,6 @@ use std::str::FromStr;
 
 use bevy::prelude::Component;
 
-#[derive(Component)]
-pub struct World;
-
 #[derive(Component, Debug, Clone, Copy)]
 pub enum TileType {
     Land,

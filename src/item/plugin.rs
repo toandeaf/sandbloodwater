@@ -1,5 +1,6 @@
-use crate::item::system::initialise_item;
 use bevy::prelude::{App, Plugin, Startup};
+
+use crate::item::system::initialise_item;
 
 pub struct ItemPlugin;
 

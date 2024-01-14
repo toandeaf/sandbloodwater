@@ -1,5 +1,6 @@
-use bevy::prelude::*;
 use std::ops::Range;
+
+use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct Player;

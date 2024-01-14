@@ -1,6 +1,7 @@
+use bevy::prelude::*;
+
 use crate::player::component::{Activity, CurrentActivity, Player};
 use crate::player::system::drop::DropEvent;
-use bevy::prelude::*;
 
 pub fn process_drop(
     mut commands: Commands,

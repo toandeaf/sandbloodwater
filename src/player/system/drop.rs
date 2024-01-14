@@ -1,6 +1,7 @@
+use bevy::prelude::*;
+
 use crate::player::component::{CurrentDirection, Player};
 use crate::player::resource::PlayerAttributes;
-use bevy::prelude::*;
 
 #[derive(Event)]
 pub struct DropEvent(pub Entity, Vec3);

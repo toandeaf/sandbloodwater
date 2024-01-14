@@ -6,4 +6,5 @@ mod entity;
 mod plugin;
 mod resource;
 mod system;
+mod system_processor;
 mod utils;

@@ -20,7 +20,7 @@ pub fn move_player(
         (&mut Transform, &mut AnimationTimer),
         (With<Player>, Without<TileType>),
     >,
-    tile_query: Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
+    tile_query: Query<(&Transform, &TextureAtlasSprite, &TileType), With<TileType>>,
     solid_query: Query<(&Transform, &Sprite), (With<Solid>, Without<Player>)>,
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
@@ -71,18 +71,19 @@ pub fn move_player(
 // 4. If there is an overlap of player contact point with entity's relevant "side" -> return 0 speed modifier.
 // 5. Iterate through all tile map entities.
 // 6. Seem filter and evaluations as steps 2. and 3.
-// 7. If there is an overlap of the player contact point with entity's (tile here)
-//    relevant "side" -> return tile specific speed modifier.
-
+// 7. If there is an overlap of the player contact point with entity's (tile here) relevant "side" -> return tile specific speed modifier.
 fn calculate_collision_or_speed_adjustment(
-    tile_query: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
+    tile_query: &Query<(&Transform, &TextureAtlasSprite, &TileType), With<TileType>>,
     solid_query: &Query<(&Transform, &Sprite), (With<Solid>, Without<Player>)>,
     player_data: (Vec3, f32, &Direction),
 ) -> Speed {
     for (target_transform, sprite) in solid_query.iter() {
         // Seeing if the player interacts with any "Solid" components first.
-        let collision_eval =
-            detect_player_component_interaction(player_data, (target_transform, sprite, None));
+        let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
+        let collision_eval = detect_player_component_interaction(
+            player_data,
+            (target_transform, sprite_radius, None),
+        );
 
         if let Some(collision_speed_change) = collision_eval {
             // If there was a collision, return the speed adjustment (it'll return 0).
@@ -93,10 +94,25 @@ fn calculate_collision_or_speed_adjustment(
     // If player hasn't collided with anything, we'll see what tile they're on and whether
     // that should affect the speed.
     for (tile_transform, sprite, tile_type) in tile_query.iter() {
+        // TODO rework map implementation. Just skipping "land" tiles for time being.
+        // Because of how solids/mountain/water etc need to be "on" land (for it not to look shit)
+        // when we're doing collision detection here we're iterating through the tiles the player
+        // is "touching" and hitting Land tiles first. Lands speed modifier is 1, ergo 1 is speed mod.
+        // It yeets out of the iter once we hit the first tile, despite the fact that the second tile is
+        // water/mountain etc.
+        // Was considering having land as z-index 0., all other "solid" tiles being 1. and then filtering
+        // But feel like this should be best handled with a proper component implementation.
+        // Possibly consolidate these two queries?? solid + tile?
+        if let TileType::Land = tile_type {
+            continue;
+        }
+
+        let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
+
         // Same component iteration logic, except we're going through the remaining tiles now
         let speed_change_eval = detect_player_component_interaction(
             player_data,
-            (tile_transform, sprite, Some(tile_type)),
+            (tile_transform, sprite_radius, Some(tile_type)),
         );
 
         if let Some(speed_change_eval) = speed_change_eval {
@@ -110,11 +126,11 @@ fn calculate_collision_or_speed_adjustment(
 
 fn detect_player_component_interaction(
     player_data: (Vec3, f32, &Direction),
-    target_data: (&Transform, &Sprite, Option<&TileType>),
+    target_data: (&Transform, f32, Option<&TileType>),
 ) -> Option<Speed> {
     // Deconstruct
     let (position, radius, direction) = player_data;
-    let (transform, sprite, tile_type_opt) = target_data;
+    let (transform, sprite_radius, tile_type_opt) = target_data;
 
     // Contact point is a point on the player sprite's "border" that interfaces with the target tiles.
     // i.e. If player is travelling up, contact point is the center of the top edge of the player sprite.
@@ -122,8 +138,6 @@ fn detect_player_component_interaction(
     let contact_point = direction.contact_point(position, radius);
 
     let (player_left_side, player_right_side) = direction.opposite_axis_sides(position, radius);
-
-    let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
 
     // Used to evaluate the opposite axis the player is trying to traverse,
     // i.e. if player is going up (y axis), this will be evaluating each tile's x axis.

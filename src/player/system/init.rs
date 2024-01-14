@@ -1,5 +1,6 @@
-use crate::player::entity::create_player_entity;
 use bevy::prelude::*;
+
+use crate::player::entity::create_player_entity;
 
 const PLAYER_Z_INDEX: f32 = 2.;
 
