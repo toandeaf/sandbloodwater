@@ -1,12 +1,12 @@
 use std::str::from_utf8;
 
+use bevy::utils::thiserror;
 use bevy::{
-    asset::{AssetLoader, AsyncReadExt, io::Reader, LoadContext},
+    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
     prelude::*,
     reflect::TypePath,
     utils::BoxedFuture,
 };
-use bevy::utils::thiserror;
 use thiserror::Error;
 
 use crate::world::utils::load_map_config_from_file;
@@ -18,12 +18,11 @@ pub struct MapLayout {
 }
 
 #[derive(Resource, Default)]
-pub struct MapState {
+pub struct MapHandles {
     pub land_handle: Handle<MapLayout>,
     pub solid_handle: Handle<MapLayout>,
     pub water_handle: Handle<MapLayout>,
     pub texture_handle: Handle<TextureAtlas>,
-    pub applied: bool,
 }
 
 #[derive(Default)]
