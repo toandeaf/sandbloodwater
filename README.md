@@ -45,9 +45,10 @@ Each top level directory should be concerned with a specific entity, which will 
   * Established "resource" file type and directory-level system bundling.
 * Version 0.3.0 - Sprites and Animations
   * Goals: 
-    * Introduce player image
-    * Establish sprite sheet ingestion standards
-    * Implement player movement animation
-    * Implement player interaction animation
-    * Introduce better tile sprites
-    * Introduce item sprites for small, medium and large items
+    * Introduced player image
+    * Established sprite sheet ingestion standards
+    * Implemented player movement animation
+    * Implemented player interaction animation
+    * Introduced better tile sprites
+    * Introduced item sprites for small, medium and large items
+* Version 0.4.0 - TBD!
