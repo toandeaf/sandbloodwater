@@ -1,6 +1,8 @@
+use crate::common::EventId;
 use bevy::prelude::*;
 
 use crate::item::Solid;
+use crate::network::Client;
 use crate::player::component::{AnimationTimer, Direction, Player};
 use crate::player::resource::PlayerAttributes;
 use crate::world::TileType;
@@ -13,7 +15,7 @@ const DEFAULT_COLLISION_SPEED: Speed = 0.;
 pub struct MovementEvent(pub Direction, pub Speed);
 
 // TODO work out how to properly abstract those bundles to reduce complexity
-#[allow(clippy::type_complexity)]
+#[allow(clippy::type_complexity, clippy::too_many_arguments)]
 pub fn move_player(
     mut event_writer: EventWriter<MovementEvent>,
     mut player_query: Query<
@@ -25,6 +27,7 @@ pub fn move_player(
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
     player_attributes: Res<PlayerAttributes>,
+    mut client: ResMut<Client>,
 ) {
     let player_radius = player_attributes.radius;
     let player_base_speed = player_attributes.speed;
@@ -58,6 +61,8 @@ pub fn move_player(
                     let new_speed = player_base_speed * speed_modifier * time.delta_seconds();
 
                     event_writer.send(MovementEvent(direction, new_speed));
+
+                    client.0.send_event(EventId::Movement(new_speed));
                 }
             });
         }
