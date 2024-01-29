@@ -1,4 +1,6 @@
-use bevy::prelude::{EventReader, Parent, Query, Res, TextureAtlasSprite, Transform, With};
+use bevy::prelude::{
+    Commands, Entity, EventReader, Parent, Query, Res, TextureAtlasSprite, Transform, With,
+};
 
 use crate::item::Item;
 use crate::player::component::{CurrentDirection, Direction, Player};
@@ -8,20 +10,18 @@ use crate::player::system::r#move::MovementEvent;
 #[allow(clippy::type_complexity)]
 pub fn process_position_change(
     mut event_reader: EventReader<MovementEvent>,
-    mut player_query: Query<
-        (
-            &mut Transform,
-            &mut TextureAtlasSprite,
-            &mut CurrentDirection,
-        ),
-        With<Player>,
-    >,
+    mut movement_query: Query<(
+        &mut Transform,
+        &mut TextureAtlasSprite,
+        &mut CurrentDirection,
+    )>,
 ) {
     for event in event_reader.read() {
-        let direction = &event.0;
-        let new_speed = &event.1;
+        let entity = &event.0;
+        let direction = &event.1;
+        let new_speed = &event.2;
 
-        let player_res = player_query.get_single_mut();
+        let player_res = movement_query.get_mut(*entity);
 
         if let Ok(player_bundle) = player_res {
             let (mut transform, mut movement_sprite_sheet, mut current_direction) = player_bundle;
@@ -46,7 +46,7 @@ pub fn process_direction_change(
 
     for event in event_reader.read() {
         for mut child_transform in item_query.iter_mut() {
-            child_transform.translation = event.0.relative_child_direction_change(player_radius);
+            child_transform.translation = event.1.relative_child_direction_change(player_radius);
         }
     }
 }

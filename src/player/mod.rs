@@ -1,4 +1,5 @@
 pub use plugin::PlayerPlugin;
+pub use system::MovementEvent;
 
 mod component;
 mod entity;

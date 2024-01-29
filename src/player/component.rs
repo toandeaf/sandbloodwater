@@ -1,6 +1,7 @@
 use std::ops::Range;
 
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Component)]
 pub struct Player;
@@ -12,7 +13,7 @@ pub struct AnimationTimer(pub Timer);
 #[derive(Component)]
 pub struct CurrentDirection(pub Direction);
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Serialize, Deserialize)]
 pub enum Direction {
     Up,
     Down,
@@ -99,7 +100,7 @@ impl Direction {
     pub fn relative_child_direction_change(&self, radius: f32) -> Vec3 {
         let radius_plus_buffer = radius + COLLISION_BUFFER;
         match *self {
-            Direction::Up => Vec3::new(0., radius_plus_buffer, 0.),
+            Direction::Up => Vec3::new(0., radius_plus_buffer, -1.),
             Direction::Down => Vec3::new(0., -radius, 1.),
             Direction::Left => Vec3::new(-radius_plus_buffer, 0., 0.),
             Direction::Right => Vec3::new(radius_plus_buffer, 0., 0.),

@@ -1,5 +1,6 @@
 use crate::common::EventId;
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::item::Solid;
 use crate::network::Client;
@@ -11,15 +12,15 @@ pub type Speed = f32;
 const DEFAULT_SPEED: f32 = 1.;
 const DEFAULT_COLLISION_SPEED: Speed = 0.;
 
-#[derive(Event)]
-pub struct MovementEvent(pub Direction, pub Speed);
+#[derive(Event, Serialize, Deserialize, Copy, Clone)]
+pub struct MovementEvent(pub Entity, pub Direction, pub Speed);
 
 // TODO work out how to properly abstract those bundles to reduce complexity
 #[allow(clippy::type_complexity, clippy::too_many_arguments)]
 pub fn move_player(
     mut event_writer: EventWriter<MovementEvent>,
     mut player_query: Query<
-        (&mut Transform, &mut AnimationTimer),
+        (&mut Transform, &mut AnimationTimer, Entity),
         (With<Player>, Without<TileType>),
     >,
     tile_query: Query<(&Transform, &TextureAtlasSprite, &TileType), With<TileType>>,
@@ -32,7 +33,9 @@ pub fn move_player(
     let player_radius = player_attributes.radius;
     let player_base_speed = player_attributes.speed;
 
-    for (player_transform, mut timer) in &mut player_query {
+    let player_bundle_res = player_query.get_single_mut();
+
+    if let Ok((player_transform, mut timer, entity)) = player_bundle_res {
         timer.tick(time.delta());
 
         if timer.just_finished() {
@@ -60,9 +63,9 @@ pub fn move_player(
                     // effect on the actual speed of the game lol.
                     let new_speed = player_base_speed * speed_modifier * time.delta_seconds();
 
-                    event_writer.send(MovementEvent(direction, new_speed));
-
-                    client.0.send_event(EventId::Movement(new_speed));
+                    let movement_event = MovementEvent(entity, direction, new_speed);
+                    event_writer.send(movement_event);
+                    client.0.send_event(EventId::Movement(movement_event));
                 }
             });
         }

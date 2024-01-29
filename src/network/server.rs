@@ -31,13 +31,14 @@ pub fn process_connection(mut stream: TcpStream) {
 
                 let event_content_res = serde_json::from_slice::<EventId>(data);
 
-                if let Ok(event_data) = event_content_res {
-                    // TODO placeholder for when we come to integrate
-                    // consume_and_apply_event(event_data);
-                    match event_data {
-                        EventId::Test(data) => println!("This data is test {}", data),
-                        EventId::More(data) => println!("This data is more {}", data),
-                        _ => println!("Sheeby!"),
+                // TODO do I just fuckin implement the broadcast and go for a straight memcopy of the vec data? lol
+                match event_content_res {
+                    Ok(_event_data) => {
+                        // TODO placeholder for when we come to integrate
+                        // consume_and_apply_event(event_data);
+                    }
+                    Err(error) => {
+                        eprintln!("Error deserialising event message: {}", error);
                     }
                 }
 

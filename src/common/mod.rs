@@ -1,3 +1,4 @@
+use crate::player::MovementEvent;
 use bevy::prelude::Event;
 use serde::{Deserialize, Serialize};
 
@@ -5,5 +6,5 @@ use serde::{Deserialize, Serialize};
 pub enum EventId {
     Test(String),
     More(String),
-    Movement(f32),
+    Movement(MovementEvent),
 }
