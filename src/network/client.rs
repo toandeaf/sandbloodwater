@@ -2,7 +2,7 @@ use std::io::{Error, Read, Write};
 use std::net::TcpStream;
 use std::str::from_utf8;
 
-use bevy::prelude::{ResMut, Resource};
+use bevy::prelude::{Event, EventReader, ResMut, Resource};
 
 use crate::common::EventId;
 
@@ -51,3 +51,5 @@ pub fn test_connection(mut client: ResMut<Client>) {
         .0
         .send_event(EventId::Test(String::from("Connection Request")));
 }
+
+pub fn events_reader(event_reader: EventReader<dyn Event>) {}
