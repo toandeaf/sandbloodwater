@@ -1,7 +1,6 @@
-use std::io::{Error, Read, Write};
-use std::net::{TcpListener, TcpStream};
-
 use crate::common::EventId;
+use std::io::{BufRead, BufReader, Error};
+use std::net::{TcpListener, TcpStream};
 
 pub struct HttpServer {
     pub listener: TcpListener,
@@ -15,45 +14,32 @@ impl HttpServer {
     }
 }
 
-pub fn process_connection(mut stream: TcpStream) {
-    let address = match stream.peer_addr() {
-        Ok(value) => value.ip().to_string() + ":" + &*value.port().to_string(),
-        Err(_) => String::from("BACKUP"),
-    };
+pub fn process_connection(stream: TcpStream) {
+    let mut buffer = vec![];
+    let mut reader = BufReader::new(stream);
 
-    let mut buffer = [0; 512];
-    let msg = b"ack";
-
-    while match stream.read(&mut buffer) {
-        Ok(size) => {
-            if size > 0 {
-                let data = &buffer[..size];
-
-                let event_content_res = serde_json::from_slice::<EventId>(data);
-
-                // TODO do I just fuckin implement the broadcast and go for a straight memcopy of the vec data? lol
-                match event_content_res {
-                    Ok(_event_data) => {
-                        // TODO placeholder for when we come to integrate
-                        // consume_and_apply_event(event_data);
-                    }
-                    Err(error) => {
-                        eprintln!("Error deserialising event message: {}", error);
-                    }
+    loop {
+        match reader.read_until(0x03, &mut buffer) {
+            Ok(bytes_read) => {
+                if bytes_read == 0 {
+                    // End of stream
+                    break;
                 }
 
-                let write_result = stream.write(msg);
+                if let Some(pos) = buffer.iter().position(|&x| x == 0x03) {
+                    let message = &buffer[..pos];
 
-                write_result.is_ok()
-            } else {
-                false
+                    if let Ok(event) = serde_json::from_slice::<EventId>(message) {
+                        println!("Received event: {}", serde_json::to_string(&event).unwrap());
+                    }
+
+                    // Remove the processed message from the buffer
+                    buffer.drain(..=pos);
+                }
+            }
+            Err(error) => {
+                eprintln!("{}", error);
             }
         }
-        Err(_) => {
-            eprintln!("Client {} has disconnected.", address);
-            let shutdown_res = stream.shutdown(std::net::Shutdown::Both);
-
-            shutdown_res.is_err()
-        }
-    } {}
+    }
 }

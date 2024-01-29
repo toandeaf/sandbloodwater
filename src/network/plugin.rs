@@ -1,4 +1,4 @@
-use crate::network::client::{test_this, Client};
+use crate::network::client::{test_connection, Client};
 use crate::network::HttpClient;
 use bevy::prelude::*;
 
@@ -12,6 +12,6 @@ impl Plugin for NetworkPlugin {
             app.insert_resource(Client(http_client));
         }
 
-        app.add_systems(Startup, test_this);
+        app.add_systems(Startup, test_connection);
     }
 }

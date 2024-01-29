@@ -14,6 +14,8 @@ pub struct HttpClient {
     buffer: [u8; 512],
 }
 
+const EOF: u8 = 0x03;
+
 impl HttpClient {
     pub fn new(addr: &str) -> Result<HttpClient, Error> {
         let connection = TcpStream::connect(addr)?;
@@ -24,8 +26,10 @@ impl HttpClient {
     }
 
     pub fn send_event(&mut self, event: EventId) {
-        if let Ok(event_bytes) = serde_json::to_vec(&event) {
-            let _write_result = self.connection.write(event_bytes.as_slice());
+        if let Ok(mut event_bytes) = serde_json::to_vec(&event) {
+            event_bytes.push(EOF);
+            let _write_result = self.connection.write(&event_bytes);
+            println!("Sending event: {}", String::from_utf8(event_bytes).unwrap());
         }
     }
 
@@ -42,8 +46,8 @@ impl HttpClient {
     }
 }
 
-pub fn test_this(mut client: ResMut<Client>) {
+pub fn test_connection(mut client: ResMut<Client>) {
     client
         .0
-        .send_event(EventId::Test(String::from("from da game tho")));
+        .send_event(EventId::Test(String::from("Connection Request")));
 }

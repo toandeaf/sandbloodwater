@@ -1,9 +1,7 @@
-use bevy::prelude::{
-    Commands, Entity, EventReader, Parent, Query, Res, TextureAtlasSprite, Transform, With,
-};
+use bevy::prelude::{EventReader, Parent, Query, Res, TextureAtlasSprite, Transform, With};
 
 use crate::item::Item;
-use crate::player::component::{CurrentDirection, Direction, Player};
+use crate::player::component::{CurrentDirection, Direction};
 use crate::player::resource::PlayerAttributes;
 use crate::player::system::r#move::MovementEvent;
 
