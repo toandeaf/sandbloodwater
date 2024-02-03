@@ -2,6 +2,7 @@ use std::io::{BufRead, BufReader, Error, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::RwLock;
 
+use crate::common::EOF;
 use bevy::prelude::Resource;
 use bevy::utils::HashMap;
 use lazy_static::lazy_static;
@@ -37,14 +38,14 @@ pub fn process_connection(stream: TcpStream) {
     let mut reader = BufReader::new(stream);
 
     loop {
-        if let Ok(bytes_read) = reader.read_until(0x03, &mut buffer) {
+        if let Ok(bytes_read) = reader.read_until(EOF, &mut buffer) {
             if bytes_read == 0 {
                 // End of stream
                 break;
             }
 
             // TODO - evaluate if I actually need this given the read_until above.
-            if let Some(delimit_position) = buffer.iter().position(|&x| x == 0x03) {
+            if let Some(delimit_position) = buffer.iter().position(|&x| x == EOF) {
                 let event_data_range = ..=delimit_position;
 
                 if let Ok(data) = SESSION_CLIENTS.read() {

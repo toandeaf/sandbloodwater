@@ -3,7 +3,7 @@ use std::net::TcpStream;
 
 use bevy::prelude::{EventReader, EventWriter, Events, ResMut, Resource};
 
-use crate::common::EventWrapper;
+use crate::common::{EventWrapper, EOF};
 use crate::player::MovementEvent;
 
 #[derive(Resource)]
@@ -11,11 +11,8 @@ pub struct Client(pub HttpClient);
 
 pub struct HttpClient {
     connection: TcpStream,
-    // reader: BufReader<TcpStream>,
     buffer: [u8; 512],
 }
-
-const EOF: u8 = 0x03;
 
 impl HttpClient {
     pub fn new(addr: &str) -> Result<HttpClient, Error> {
@@ -24,7 +21,6 @@ impl HttpClient {
 
         Ok(HttpClient {
             connection,
-            // reader: BufReader::new(connection),
             buffer: [0; 512],
         })
     }
@@ -40,12 +36,13 @@ impl HttpClient {
 
     pub fn receive_event(&mut self) -> Vec<EventWrapper> {
         let mut events = vec![];
+
         if let Ok(bytes_read) = self.connection.read(&mut self.buffer) {
             if bytes_read == 0 {
                 return events;
             }
 
-            let break_point = self.buffer.iter().position(|e| e == &0x03);
+            let break_point = self.buffer.iter().position(|e| e == &EOF);
 
             if let Some(position) = break_point {
                 let parsed_event_id =

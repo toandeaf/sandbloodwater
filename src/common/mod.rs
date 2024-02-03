@@ -10,3 +10,5 @@ pub enum EventWrapper {
 }
 
 pub const SERVER_ADDRESS: &str = "127.0.0.1:7878";
+
+pub const EOF: u8 = 0x03;
