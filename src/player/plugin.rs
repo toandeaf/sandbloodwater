@@ -18,14 +18,17 @@ impl Plugin for PlayerPlugin {
             .add_systems(
                 Main,
                 (
-                    move_player,
-                    interact,
-                    drop,
                     process_position_change,
                     process_direction_change,
                     process_interact,
                     process_drop,
                 ),
             );
+
+        // TODO probably need a better bundling than this.
+        #[cfg(feature = "client")]
+        {
+            app.add_systems(Main, (move_player, interact, drop));
+        }
     }
 }

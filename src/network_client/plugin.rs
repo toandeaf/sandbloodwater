@@ -9,10 +9,10 @@ pub struct ClientPlugin;
 
 impl Plugin for ClientPlugin {
     fn build(&self, app: &mut App) {
-        let http_client_res = HttpClient::new(SERVER_ADDRESS);
+        let client_res = Client::new(SERVER_ADDRESS);
 
-        if let Ok(http_client) = http_client_res {
-            app.insert_resource(Client(http_client))
+        if let Ok(http_client) = client_res {
+            app.insert_resource(http_client)
                 .add_systems(Main, (process_move_client, receive_events, event_handler));
         }
     }

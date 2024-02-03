@@ -13,3 +13,6 @@ serde = "1.0.196"
 serde_json = "1.0.112"
 tsv = "0.1.1"
 wasm-bindgen-cli = "0.2.89"
+
+[features]
+client = []

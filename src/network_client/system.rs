@@ -13,6 +13,6 @@ pub fn process_move_client(
     mut client: ResMut<Client>,
 ) {
     for event in event_reader.read() {
-        client.0.send_event(EventWrapper::Movement(*event));
+        // client.send_event(EventWrapper::Movement(*event));
     }
 }

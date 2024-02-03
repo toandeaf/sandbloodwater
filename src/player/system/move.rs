@@ -1,7 +1,9 @@
+use crate::common::EventWrapper;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::item::Solid;
+use crate::network_client::Client;
 use crate::player::component::{AnimationTimer, Direction, Player};
 use crate::player::resource::PlayerAttributes;
 use crate::world::TileType;
@@ -27,6 +29,7 @@ pub fn move_player(
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
     player_attributes: Res<PlayerAttributes>,
+    mut client: ResMut<Client>,
 ) {
     let player_radius = player_attributes.radius;
     let player_base_speed = player_attributes.speed;
@@ -63,6 +66,7 @@ pub fn move_player(
 
                     let movement_event = MovementEvent(entity, direction, new_speed);
                     event_writer.send(movement_event);
+                    client.send_event(EventWrapper::Movement(movement_event));
                 }
             });
         }
