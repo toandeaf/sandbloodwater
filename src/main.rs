@@ -8,6 +8,7 @@ mod camera;
 mod common;
 mod game;
 mod item;
+mod network_client;
 mod player;
 mod world;
 

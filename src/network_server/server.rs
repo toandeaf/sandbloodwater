@@ -3,6 +3,7 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::RwLock;
 
 use bevy::prelude::Resource;
+use bevy::utils::HashMap;
 use lazy_static::lazy_static;
 
 #[derive(Resource)]
@@ -21,12 +22,15 @@ impl HttpServer {
 }
 
 lazy_static! {
-    static ref HOSTS: RwLock<Vec<TcpStream>> = RwLock::new(Vec::new());
+    static ref SESSION_CLIENTS: RwLock<HashMap<usize, TcpStream>> = RwLock::new(HashMap::new());
 }
 
 pub fn process_connection(stream: TcpStream) {
-    if let Ok(mut addresses) = HOSTS.write() {
-        addresses.push(stream.try_clone().unwrap());
+    let mut owning_key: usize = 0;
+
+    if let Ok(mut addresses) = SESSION_CLIENTS.write() {
+        owning_key = addresses.len() + 1;
+        addresses.insert(owning_key, stream.try_clone().unwrap());
     }
 
     let mut buffer = vec![];
@@ -39,17 +43,21 @@ pub fn process_connection(stream: TcpStream) {
                 break;
             }
 
-            if let Some(pos) = buffer.iter().position(|&x| x == 0x03) {
-                let message = &buffer[..pos].to_vec();
+            // TODO - evaluate if I actually need this given the read_until above.
+            if let Some(delimit_position) = buffer.iter().position(|&x| x == 0x03) {
+                let event_data_range = ..=delimit_position;
 
-                if let Ok(data) = HOSTS.read() {
-                    for mut connection in data.iter() {
-                        let _write_result = connection.write_all(message);
+                if let Ok(data) = SESSION_CLIENTS.read() {
+                    // TODO is there a better broadcast implementation rather than iterating like this?
+                    for (key, mut connection) in data.iter() {
+                        if &owning_key != key {
+                            let _write_result = connection.write_all(&buffer[event_data_range]);
+                        }
                     }
                 }
 
                 // Remove the processed message from the buffer
-                buffer.drain(..=pos);
+                buffer.drain(event_data_range);
             }
         }
     }

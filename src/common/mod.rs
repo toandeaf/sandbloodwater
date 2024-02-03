@@ -1,11 +1,11 @@
-use crate::player::MovementEvent;
 use bevy::prelude::Event;
 use serde::{Deserialize, Serialize};
 
+use crate::player::MovementEvent;
+
 #[derive(Serialize, Deserialize, Event)]
-pub enum EventId {
+pub enum EventWrapper {
     Test(String),
-    More(String),
     Movement(MovementEvent),
 }
 
