@@ -8,3 +8,5 @@ pub enum EventId {
     More(String),
     Movement(MovementEvent),
 }
+
+pub const SERVER_ADDRESS: &str = "127.0.0.1:7878";

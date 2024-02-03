@@ -3456,6 +3456,7 @@ version = "0.3.0"
 dependencies = [
  "bevy",
  "bevy_embedded_assets",
+ "lazy_static",
  "serde",
  "serde_json",
  "tsv",

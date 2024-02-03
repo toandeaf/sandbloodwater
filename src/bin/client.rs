@@ -1,12 +1,17 @@
-use sandbloodwater::common::EventId;
-use sandbloodwater::network::HttpClient;
+use bevy::DefaultPlugins;
+use bevy::prelude::App;
+use bevy_embedded_assets::EmbeddedAssetPlugin;
+
+use sandbloodwater::game::GamePlugin;
+use sandbloodwater::network_client::ClientPlugin;
 
 fn main() {
-    let client_res = HttpClient::new("127.0.0.1:7878");
-    if let Ok(mut client) = client_res {
-        loop {
-            client.send_event(EventId::Test(String::from("Test string content")));
-            client.receive_event();
-        }
-    }
+    App::new()
+        .add_plugins((
+            DefaultPlugins,
+            EmbeddedAssetPlugin::default(),
+            GamePlugin,
+            ClientPlugin,
+        ))
+        .run();
 }
