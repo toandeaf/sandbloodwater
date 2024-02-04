@@ -1,4 +1,5 @@
 pub mod plugin;
-pub mod server;
+mod resource;
+pub mod system;
 
-pub use server::{process_connection, Server};
+pub use system::{handle_client_connection, Server};
