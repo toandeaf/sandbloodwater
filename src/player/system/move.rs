@@ -65,6 +65,7 @@ pub fn move_player(
                     let new_speed = player_base_speed * speed_modifier * time.delta_seconds();
 
                     let movement_event = MovementEvent(entity, direction, new_speed);
+
                     event_writer.send(movement_event);
                     client.send_event(EventWrapper::Movement(movement_event));
                 }

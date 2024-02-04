@@ -1,3 +1,4 @@
+use crate::common::EventWrapper;
 use bevy::prelude::{
     Commands, Entity, EventReader, Parent, Query, Res, ResMut, TextureAtlasSprite, Transform, With,
 };
