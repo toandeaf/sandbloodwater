@@ -1,6 +1,6 @@
 use std::io::{BufRead, BufReader, Error, Write};
 use std::net::{TcpListener, TcpStream};
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::Sender;
 use std::sync::RwLock;
 
 use bevy::prelude::Resource;

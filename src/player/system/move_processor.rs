@@ -1,7 +1,4 @@
-use crate::common::EventWrapper;
-use bevy::prelude::{
-    Commands, Entity, EventReader, Parent, Query, Res, ResMut, TextureAtlasSprite, Transform, With,
-};
+use bevy::prelude::{Entity, EventReader, Parent, Query, Res, TextureAtlasSprite, Transform, With};
 
 use crate::item::Item;
 use crate::player::component::{CurrentDirection, Direction};
