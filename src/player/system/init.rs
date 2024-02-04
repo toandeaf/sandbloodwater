@@ -1,7 +1,7 @@
 use crate::common::EventWrapper;
 use crate::network_client::Client;
 use bevy::prelude::*;
-use bevy::utils::HashMap;
+use bevy::utils::{HashMap, Uuid};
 use serde::{Deserialize, Serialize};
 
 use crate::player::entity::create_player_entity;
@@ -9,10 +9,10 @@ use crate::player::entity::create_player_entity;
 pub const PLAYER_Z_INDEX: f32 = 2.;
 
 #[derive(Event, Serialize, Deserialize, Copy, Clone)]
-pub struct PlayerCreateEvent(pub Entity, pub Vec2);
+pub struct PlayerCreateEvent(pub Uuid, pub Vec2);
 
 #[derive(Resource)]
-pub struct PlayerMapping(pub HashMap<Entity, Entity>);
+pub struct PlayerMapping(pub HashMap<Uuid, Entity>);
 
 #[derive(Resource)]
 pub struct PlayerTextureAtlas(pub Handle<TextureAtlas>);
@@ -49,22 +49,20 @@ pub fn initialise_player(
 
     let beside_the_items_lol = Vec2::new(200., 100.);
 
+    let player_uuid = Uuid::new_v4();
+
     let entity = commands
         .spawn(create_player_entity(
+            player_uuid,
             texture_atlas_handle,
             Vec3::from((beside_the_items_lol, PLAYER_Z_INDEX)),
         ))
         .id();
 
-    println!(
-        "Creating player at {}",
-        serde_json::to_string::<Entity>(&entity).unwrap()
-    );
-
-    player_mapping.0.insert(entity, entity);
+    player_mapping.0.insert(player_uuid, entity);
 
     client.send_event(EventWrapper::PlayerCreate(PlayerCreateEvent(
-        entity,
+        player_uuid,
         beside_the_items_lol,
     )));
 }

@@ -1,8 +1,8 @@
 use bevy::prelude::*;
-use bevy::utils::default;
+use bevy::utils::{default, Uuid};
 
 use crate::player::component::{
-    Activity, AnimationTimer, CurrentActivity, CurrentDirection, Direction, Player,
+    Activity, AnimationTimer, CharacterMarker, CurrentActivity, CurrentDirection, Direction, Player,
 };
 
 // The higher this is, the slower the animation
@@ -17,6 +17,7 @@ pub struct PlayerBundle {
 
 #[derive(Bundle)]
 pub struct CharacterBundle {
+    character_marker: CharacterMarker,
     state: PlayerState,
     timer: AnimationTimer,
     sprite_bundle: SpriteSheetBundle,
@@ -29,10 +30,12 @@ pub struct PlayerState {
 }
 
 pub fn create_character_entity(
+    uuid: Uuid,
     texture_atlas: Handle<TextureAtlas>,
     starting_position: Vec3,
 ) -> CharacterBundle {
     CharacterBundle {
+        character_marker: CharacterMarker(uuid),
         state: PlayerState {
             direction: CurrentDirection(Direction::Down),
             activity: CurrentActivity(Activity::Idle),
@@ -54,11 +57,12 @@ pub fn create_character_entity(
 }
 
 pub fn create_player_entity(
+    uuid: Uuid,
     texture_atlas: Handle<TextureAtlas>,
     starting_position: Vec3,
 ) -> PlayerBundle {
     PlayerBundle {
         player: Player,
-        character_bundle: create_character_entity(texture_atlas, starting_position),
+        character_bundle: create_character_entity(uuid, texture_atlas, starting_position),
     }
 }

@@ -11,7 +11,7 @@ impl Plugin for ClientPlugin {
 
         if let Ok(http_client) = client_res {
             app.insert_resource(http_client)
-                .add_systems(Main, (receive_events, event_handler));
+                .add_systems(Main, (event_handler, receive_events));
         }
     }
 }

@@ -62,21 +62,21 @@ pub fn handle_client_connection(client_stream: TcpStream, event_sender: Sender<E
 
             // TODO - evaluate if I actually need this given the read_until above.
             if let Some(delimit_position) = buffer.iter().position(|&byte| byte == EOF) {
-                let event_data = &buffer[..delimit_position];
-
                 if let Ok(data) = SESSION_CLIENTS.read() {
                     // TODO is there a better broadcast implementation rather than iterating like this?
                     for (key, mut connection) in data.iter() {
                         if &owning_key != key {
-                            connection
-                                .write_all(event_data)
-                                .expect("Issue broadcasting to client");
+                            let number = connection.write(&buffer[..delimit_position]).unwrap();
+                            if number == buffer[..delimit_position].len() {
+                                connection.flush().unwrap();
+                            }
                         }
                     }
                 }
 
-                let event_wrapper = serde_json::from_slice::<EventWrapper>(event_data)
-                    .expect("Failed to parse event wrapper.");
+                let event_wrapper =
+                    serde_json::from_slice::<EventWrapper>(&buffer[..delimit_position])
+                        .expect("Failed to parse event wrapper.");
 
                 event_sender
                     .send(event_wrapper)
@@ -98,10 +98,6 @@ pub fn read_from_event_queue(mut event_writer: EventWriter<EventWrapper>) {
 
     if let Ok(mut queue) = EVENT_QUEUE.write() {
         if let Some(event) = queue.pop_front() {
-            println!(
-                "Processing server event {}",
-                serde_json::to_string::<EventWrapper>(&event).expect("Failed to parse event.")
-            );
             event_writer.send(event);
         }
     };

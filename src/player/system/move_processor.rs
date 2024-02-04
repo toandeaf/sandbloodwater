@@ -1,4 +1,5 @@
-use bevy::prelude::{Entity, EventReader, Parent, Query, Res, TextureAtlasSprite, Transform, With};
+use bevy::prelude::{EventReader, Parent, Query, Res, TextureAtlasSprite, Transform, With};
+use bevy::utils::Uuid;
 
 use crate::item::Item;
 use crate::player::component::{CurrentDirection, Direction};
@@ -17,12 +18,12 @@ pub fn process_position_change(
     player_mapping: Res<PlayerMapping>,
 ) {
     for event in event_reader.read() {
-        let entity = &event.0;
+        let uuid = &event.0;
         let direction = &event.1;
         let new_speed = &event.2;
 
         // TODO - this is absolutely broken when both players occupy the same index. Needs rework.
-        let player_entity_equivalent_opt = player_mapping.0.get::<Entity>(entity);
+        let player_entity_equivalent_opt = player_mapping.0.get::<Uuid>(uuid);
 
         if let Some(player_entity_equivalent) = player_entity_equivalent_opt {
             let player_res = movement_query.get_mut(*player_entity_equivalent);

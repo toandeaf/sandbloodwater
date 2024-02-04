@@ -1,10 +1,14 @@
 use std::ops::Range;
 
 use bevy::prelude::*;
+use bevy::utils::Uuid;
 use serde::{Deserialize, Serialize};
 
 #[derive(Component)]
 pub struct Player;
+
+#[derive(Component)]
+pub struct CharacterMarker(pub Uuid);
 
 // TODO might just be able to use Res<Time> and predicate on seconds
 #[derive(Component, Deref, DerefMut)]

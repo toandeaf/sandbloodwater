@@ -1,10 +1,11 @@
 use crate::common::EventWrapper;
 use bevy::prelude::*;
+use bevy::utils::Uuid;
 use serde::{Deserialize, Serialize};
 
 use crate::item::Solid;
 use crate::network_client::Client;
-use crate::player::component::{AnimationTimer, Direction, Player};
+use crate::player::component::{AnimationTimer, CharacterMarker, Direction, Player};
 use crate::player::resource::PlayerAttributes;
 use crate::world::TileType;
 
@@ -14,14 +15,14 @@ const DEFAULT_SPEED: f32 = 1.;
 const DEFAULT_COLLISION_SPEED: Speed = 0.;
 
 #[derive(Event, Serialize, Deserialize, Copy, Clone)]
-pub struct MovementEvent(pub Entity, pub Direction, pub Speed);
+pub struct MovementEvent(pub Uuid, pub Direction, pub Speed);
 
 // TODO work out how to properly abstract those bundles to reduce complexity
 #[allow(clippy::type_complexity, clippy::too_many_arguments)]
 pub fn move_player(
     mut event_writer: EventWriter<MovementEvent>,
     mut player_query: Query<
-        (&mut Transform, &mut AnimationTimer, Entity),
+        (&mut Transform, &mut AnimationTimer, &CharacterMarker),
         (With<Player>, Without<TileType>),
     >,
     tile_query: Query<(&Transform, &TextureAtlasSprite, &TileType), With<TileType>>,
@@ -36,7 +37,7 @@ pub fn move_player(
 
     let player_bundle_res = player_query.get_single_mut();
 
-    if let Ok((player_transform, mut timer, entity)) = player_bundle_res {
+    if let Ok((player_transform, mut timer, uuid)) = player_bundle_res {
         timer.tick(time.delta());
 
         if timer.just_finished() {
@@ -64,7 +65,7 @@ pub fn move_player(
                     // effect on the actual speed of the game lol.
                     let new_speed = player_base_speed * speed_modifier * time.delta_seconds();
 
-                    let movement_event = MovementEvent(entity, direction, new_speed);
+                    let movement_event = MovementEvent(uuid.0, direction, new_speed);
 
                     event_writer.send(movement_event);
                     client.send_event(EventWrapper::Movement(movement_event));

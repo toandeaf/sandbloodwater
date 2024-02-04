@@ -1,4 +1,4 @@
-use std::io::{Error, Read, Write};
+use std::io::{BufRead, BufReader, BufWriter, Error, Read, Write};
 use std::net::TcpStream;
 
 use bevy::prelude::{EventReader, EventWriter, Events, ResMut, Resource};
@@ -10,8 +10,8 @@ use crate::player::{MovementEvent, PlayerCreateEvent};
 pub struct Client(pub HttpClient);
 
 pub struct HttpClient {
-    connection: TcpStream,
-    buffer: [u8; 512],
+    writer: BufWriter<TcpStream>,
+    reader: BufReader<TcpStream>,
 }
 
 impl Client {
@@ -19,43 +19,51 @@ impl Client {
         let connection = TcpStream::connect(addr)?;
         connection.set_nonblocking(true).unwrap();
 
+        let read_connection = connection.try_clone().unwrap();
+
         Ok(Client(HttpClient {
-            connection,
-            buffer: [0; 512],
+            reader: BufReader::new(read_connection),
+            writer: BufWriter::new(connection),
         }))
     }
 
     pub fn send_event(&mut self, event: EventWrapper) {
         if let Ok(mut event_bytes) = serde_json::to_vec(&event) {
             event_bytes.push(EOF);
-            let _write_result = self.0.connection.write(&event_bytes);
+
+            let bytes_written = self.0.writer.write(&event_bytes).expect("FUCKED THE WRITE");
+
+            if bytes_written == event_bytes.len() {
+                self.0.writer.flush().unwrap();
+            }
 
             println!("Sending event: {}", String::from_utf8(event_bytes).unwrap());
         }
     }
 
-    pub fn receive_event(&mut self) -> Vec<EventWrapper> {
-        let mut events = vec![];
+    pub fn receive_event(&mut self) -> Option<EventWrapper> {
+        let mut buffer = vec![];
 
-        if let Ok(bytes_read) = self.0.connection.read(&mut self.0.buffer) {
+        if let Ok(bytes_read) = self.0.reader.read_until(EOF, &mut buffer) {
+            println!("BYTES READ {}", bytes_read);
+
             if bytes_read == 0 {
-                return events;
+                // End of stream
+                return None;
             }
 
-            let break_point = self.0.buffer.iter().position(|e| e == &EOF);
+            // TODO - evaluate if I actually need this given the read_until above.
+            if let Some(delimit_position) = buffer.iter().position(|&byte| byte == EOF) {
+                let event_wrapper =
+                    serde_json::from_slice::<EventWrapper>(&buffer[..delimit_position])
+                        .expect("Failed to parse event wrapper.");
 
-            if let Some(position) = break_point {
-                let parsed_event_id =
-                    serde_json::from_slice::<EventWrapper>(&self.0.buffer[..position]);
-
-                if let Ok(event_id) = parsed_event_id {
-                    events.push(event_id);
-                }
+                // Remove the processed message from the buffer
+                buffer.drain(..=delimit_position);
+                return Some(event_wrapper);
             }
-
-            // TODO need to delimit here too.
-        }
-        events
+        };
+        None
     }
 }
 
