@@ -1,31 +1,30 @@
 use std::io::{BufRead, BufReader, Error, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::mpsc::Sender;
-use std::sync::RwLock;
+use std::sync::{mpsc, RwLock};
+use std::thread;
 
-use bevy::prelude::Resource;
+use bevy::prelude::{EventWriter, Resource};
 use bevy::utils::HashMap;
 use lazy_static::lazy_static;
+use std::collections::VecDeque;
 
-use crate::common::{EventWrapper, EOF};
+use crate::common::{EventWrapper, EOF, SERVER_ADDRESS};
 
 #[derive(Resource)]
-pub struct Server(pub HttpServer);
+pub struct Server(TcpListener);
 
-pub struct HttpServer {
-    pub listener: TcpListener,
-}
-
-impl HttpServer {
-    pub fn new(addr: &str) -> Result<HttpServer, Error> {
+impl Server {
+    pub fn new(addr: &str) -> Result<Server, Error> {
         let listener = TcpListener::bind(addr)?;
 
-        Ok(HttpServer { listener })
+        Ok(Server(listener))
     }
 }
 
 lazy_static! {
     static ref SESSION_CLIENTS: RwLock<HashMap<usize, TcpStream>> = RwLock::new(HashMap::new());
+    static ref EVENT_QUEUE: RwLock<VecDeque<EventWrapper>> = RwLock::new(VecDeque::new());
 }
 
 pub fn process_connection(stream: TcpStream, sender: Sender<EventWrapper>) {
@@ -48,7 +47,7 @@ pub fn process_connection(stream: TcpStream, sender: Sender<EventWrapper>) {
             }
 
             // TODO - evaluate if I actually need this given the read_until above.
-            if let Some(delimit_position) = buffer.iter().position(|&x| x == EOF) {
+            if let Some(delimit_position) = buffer.iter().position(|&byte| byte == EOF) {
                 let full_data_range = ..=delimit_position;
                 let event_data_range = ..delimit_position;
 
@@ -76,4 +75,46 @@ pub fn process_connection(stream: TcpStream, sender: Sender<EventWrapper>) {
             }
         }
     }
+}
+
+pub fn read_from_event_queue(mut event_writer: EventWriter<EventWrapper>) {
+    if let Ok(queue) = EVENT_QUEUE.read() {
+        if queue.is_empty() {
+            return;
+        }
+    }
+    if let Ok(mut queue) = EVENT_QUEUE.write() {
+        if let Some(event) = queue.pop_front() {
+            println!(
+                "Processing server event {}",
+                serde_json::to_string::<EventWrapper>(&event).unwrap()
+            );
+            event_writer.send(event);
+        }
+    }
+}
+
+pub fn initialize_server() {
+    let server = Server::new(SERVER_ADDRESS).unwrap();
+    server.0.set_nonblocking(true).unwrap();
+
+    let (event_sender, event_receiver) = mpsc::channel::<EventWrapper>();
+
+    thread::spawn(move || {
+        for stream in server.0.incoming() {
+            let sender = event_sender.clone();
+
+            if let Ok(data) = stream {
+                thread::spawn(move || process_connection(data, sender));
+            }
+        }
+    });
+
+    thread::spawn(|| {
+        for event in event_receiver {
+            if let Ok(mut queue) = EVENT_QUEUE.write() {
+                queue.push_front(event);
+            }
+        }
+    });
 }
