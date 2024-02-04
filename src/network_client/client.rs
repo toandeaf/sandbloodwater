@@ -17,9 +17,9 @@ pub struct HttpClient {
 impl Client {
     pub fn new(addr: &str) -> Result<Client, Error> {
         let connection = TcpStream::connect(addr)?;
-        connection.set_nonblocking(true).unwrap();
+        connection.set_nonblocking(true)?;
 
-        let read_connection = connection.try_clone().unwrap();
+        let read_connection = connection.try_clone()?;
 
         Ok(Client(HttpClient {
             reader: BufReader::new(read_connection),

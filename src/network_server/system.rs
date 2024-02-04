@@ -66,10 +66,8 @@ pub fn handle_client_connection(client_stream: TcpStream, event_sender: Sender<E
                     // TODO is there a better broadcast implementation rather than iterating like this?
                     for (key, mut connection) in data.iter() {
                         if &owning_key != key {
-                            let number = connection.write(&buffer[..delimit_position]).unwrap();
-                            if number == buffer[..delimit_position].len() {
-                                connection.flush().unwrap();
-                            }
+                            connection.write_all(&buffer[..=delimit_position]).unwrap();
+                            connection.flush().unwrap();
                         }
                     }
                 }
