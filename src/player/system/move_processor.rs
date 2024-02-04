@@ -1,9 +1,12 @@
-use bevy::prelude::{EventReader, Parent, Query, Res, TextureAtlasSprite, Transform, With};
+use bevy::prelude::{
+    Commands, Entity, EventReader, Parent, Query, Res, ResMut, TextureAtlasSprite, Transform, With,
+};
 
 use crate::item::Item;
 use crate::player::component::{CurrentDirection, Direction};
 use crate::player::resource::PlayerAttributes;
 use crate::player::system::r#move::MovementEvent;
+use crate::player::system::PlayerMapping;
 
 #[allow(clippy::type_complexity)]
 pub fn process_position_change(
@@ -13,24 +16,31 @@ pub fn process_position_change(
         &mut TextureAtlasSprite,
         &mut CurrentDirection,
     )>,
+    player_mapping: Res<PlayerMapping>,
 ) {
     for event in event_reader.read() {
         let entity = &event.0;
         let direction = &event.1;
         let new_speed = &event.2;
 
-        let player_res = movement_query.get_mut(*entity);
+        // TODO - this is absolutely broken when both players occupy the same index. Needs rework.
+        let player_entity_equivalent_opt = player_mapping.0.get::<Entity>(entity);
 
-        if let Ok(player_bundle) = player_res {
-            let (mut transform, mut movement_sprite_sheet, mut current_direction) = player_bundle;
+        if let Some(player_entity_equivalent) = player_entity_equivalent_opt {
+            let player_res = movement_query.get_mut(*player_entity_equivalent);
 
-            // Update player direction
-            current_direction.0 = *direction;
-            // Update sprite tile
-            movement_sprite_sheet.index =
-                calculate_next_sprite(direction, &movement_sprite_sheet.index);
-            // Update position
-            transform.translation = direction.new_position(transform.translation, *new_speed);
+            if let Ok(player_bundle) = player_res {
+                let (mut transform, mut movement_sprite_sheet, mut current_direction) =
+                    player_bundle;
+
+                // Update player direction
+                current_direction.0 = *direction;
+                // Update sprite tile
+                movement_sprite_sheet.index =
+                    calculate_next_sprite(direction, &movement_sprite_sheet.index);
+                // Update position
+                transform.translation = direction.new_position(transform.translation, *new_speed);
+            }
         }
     }
 }

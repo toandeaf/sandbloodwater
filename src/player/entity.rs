@@ -12,6 +12,11 @@ const PLAYER_SIZE: f32 = 40.;
 #[derive(Bundle)]
 pub struct PlayerBundle {
     player: Player,
+    character_bundle: CharacterBundle,
+}
+
+#[derive(Bundle)]
+pub struct CharacterBundle {
     state: PlayerState,
     timer: AnimationTimer,
     sprite_bundle: SpriteSheetBundle,
@@ -23,12 +28,11 @@ pub struct PlayerState {
     activity: CurrentActivity,
 }
 
-pub fn create_player_entity(
+pub fn create_character_entity(
     texture_atlas: Handle<TextureAtlas>,
     starting_position: Vec3,
-) -> PlayerBundle {
-    PlayerBundle {
-        player: Player,
+) -> CharacterBundle {
+    CharacterBundle {
         state: PlayerState {
             direction: CurrentDirection(Direction::Down),
             activity: CurrentActivity(Activity::Idle),
@@ -46,5 +50,15 @@ pub fn create_player_entity(
             texture_atlas,
             ..default()
         },
+    }
+}
+
+pub fn create_player_entity(
+    texture_atlas: Handle<TextureAtlas>,
+    starting_position: Vec3,
+) -> PlayerBundle {
+    PlayerBundle {
+        player: Player,
+        character_bundle: create_character_entity(texture_atlas, starting_position),
     }
 }

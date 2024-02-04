@@ -4,7 +4,7 @@ use std::net::TcpStream;
 use bevy::prelude::{EventReader, EventWriter, Events, ResMut, Resource};
 
 use crate::common::{EventWrapper, EOF};
-use crate::player::MovementEvent;
+use crate::player::{MovementEvent, PlayerCreateEvent};
 
 #[derive(Resource)]
 pub struct Client(pub HttpClient);
@@ -70,12 +70,13 @@ pub fn receive_events(mut client: ResMut<Client>, mut events: ResMut<Events<Even
 pub fn event_handler(
     mut event_reader: EventReader<EventWrapper>,
     mut movement_event_writer: EventWriter<MovementEvent>,
+    mut player_event_writer: EventWriter<PlayerCreateEvent>,
 ) {
     for event in event_reader.read() {
-        if let EventWrapper::Movement(event) = event {
-            println!("Receiving event {}", event.0.index());
-
-            movement_event_writer.send(*event)
+        match event {
+            EventWrapper::Movement(event_data) => movement_event_writer.send(*event_data),
+            EventWrapper::PlayerCreate(event_data) => player_event_writer.send(*event_data),
+            EventWrapper::Test(_) => {}
         }
     }
 }
