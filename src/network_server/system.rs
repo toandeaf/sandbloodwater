@@ -91,17 +91,18 @@ pub fn handle_client_connection(client_stream: TcpStream, event_sender: Sender<E
 
 pub fn read_from_event_queue(mut event_writer: EventWriter<EventWrapper>) {
     if let Ok(queue) = EVENT_QUEUE.read() {
-        if !queue.is_empty() {
-            if let Ok(mut queue) = EVENT_QUEUE.write() {
-                if let Some(event) = queue.pop_front() {
-                    println!(
-                        "Processing server event {}",
-                        serde_json::to_string::<EventWrapper>(&event)
-                            .expect("Failed to parse event.")
-                    );
-                    event_writer.send(event);
-                }
-            };
+        if queue.is_empty() {
+            return;
         }
     }
+
+    if let Ok(mut queue) = EVENT_QUEUE.write() {
+        if let Some(event) = queue.pop_front() {
+            println!(
+                "Processing server event {}",
+                serde_json::to_string::<EventWrapper>(&event).expect("Failed to parse event.")
+            );
+            event_writer.send(event);
+        }
+    };
 }
