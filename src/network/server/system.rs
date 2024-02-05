@@ -1,14 +1,21 @@
+use std::collections::VecDeque;
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
-use std::sync::mpsc;
 use std::sync::mpsc::Sender;
+use std::sync::{mpsc, RwLock};
 use std::thread;
 
 use bevy::prelude::EventWriter;
+use bevy::utils::HashMap;
+use lazy_static::lazy_static;
 
 use crate::common::{EventWrapper, EOF, SERVER_ADDRESS};
-use crate::network::resource::{EVENT_QUEUE, SESSION_CLIENTS};
 use crate::network::server::resource::Server;
+
+lazy_static! {
+    static ref SESSION_CLIENTS: RwLock<HashMap<usize, TcpStream>> = RwLock::new(HashMap::new());
+    static ref EVENT_QUEUE: RwLock<VecDeque<EventWrapper>> = RwLock::new(VecDeque::new());
+}
 
 pub fn initialize_server() {
     let server = Server::new(SERVER_ADDRESS).expect("Couldn't initialise server.");
