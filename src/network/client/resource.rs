@@ -42,8 +42,6 @@ impl Client {
         let mut buffer = vec![];
 
         if let Ok(bytes_read) = self.0.reader.read_until(EOF, &mut buffer) {
-            println!("BYTES READ {}", bytes_read);
-
             if bytes_read == 0 {
                 // End of stream
                 return None;

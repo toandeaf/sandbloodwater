@@ -1,5 +1,3 @@
-use std::io::Read;
-
 use bevy::prelude::{EventReader, EventWriter, Events, ResMut};
 
 use crate::common::EventWrapper;

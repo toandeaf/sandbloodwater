@@ -18,9 +18,6 @@ pub fn process_init(
                 Vec3::from((event.1, PLAYER_Z_INDEX)),
             ))
             .id();
-
-        println!("CREATING PLAYER AT INDEX {}", entity.index());
-
         player_mapping.0.insert(event.0, entity);
     }
 }
