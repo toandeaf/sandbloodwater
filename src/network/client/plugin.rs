@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 
 use crate::common::SERVER_ADDRESS;
-use crate::network_client::client::{event_handler, receive_events, Client};
+use crate::network::client::event_handler;
+use crate::network::client::resource::Client;
+use crate::network::client::system::receive_events;
 
 pub struct ClientPlugin;
 

@@ -1,8 +1,7 @@
+use crate::network::client::event_handler;
+use crate::network::server::system::{initialize_server, read_from_event_queue};
 use bevy::app::{App, Plugin, Startup};
 use bevy::prelude::Main;
-
-use crate::network_client::event_handler;
-use crate::network_server::system::{initialize_server, read_from_event_queue};
 
 pub struct ServerPlugin;
 

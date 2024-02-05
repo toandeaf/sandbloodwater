@@ -4,7 +4,7 @@ use bevy::utils::Uuid;
 use serde::{Deserialize, Serialize};
 
 use crate::item::Solid;
-use crate::network_client::Client;
+use crate::network::Client;
 use crate::player::component::{AnimationTimer, CharacterMarker, Direction, Player};
 use crate::player::resource::PlayerAttributes;
 use crate::world::TileType;

@@ -1,5 +1,5 @@
 use crate::common::EventWrapper;
-use crate::network_client::Client;
+use crate::network::Client;
 use bevy::prelude::*;
 use bevy::utils::{HashMap, Uuid};
 use serde::{Deserialize, Serialize};

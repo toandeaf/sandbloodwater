@@ -19,10 +19,17 @@ impl Plugin for PlayerPlugin {
             .add_event::<InteractionEvent>()
             .add_event::<PlayerCreateEvent>()
             .add_event::<DropEvent>()
-            .insert_resource(PlayerMapping(HashMap::new()))
-            .add_systems(
+            .insert_resource(PlayerMapping(HashMap::new()));
+
+        // TODO probably need a better bundling than this.
+        #[cfg(feature = "client")]
+        {
+            app.add_systems(Startup, initialise_player).add_systems(
                 Main,
                 (
+                    move_player,
+                    interact,
+                    drop,
                     process_position_change,
                     process_direction_change,
                     process_interact,
@@ -30,12 +37,6 @@ impl Plugin for PlayerPlugin {
                     process_init,
                 ),
             );
-
-        // TODO probably need a better bundling than this.
-        #[cfg(feature = "client")]
-        {
-            app.add_systems(Startup, initialise_player)
-                .add_systems(Main, (move_player, interact, drop));
         }
     }
 }

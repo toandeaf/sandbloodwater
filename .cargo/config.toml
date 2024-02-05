@@ -2,6 +2,5 @@
 build-release = "build --release"
 build-wasm = "build --release --target wasm32-unknown-unknown"
 release-web = "wasm-bindgen --out-dir ./target/release/web --target web --no-typescript ./target/wasm32-unknown-unknown/release/sandbloodwater.wasm"
-run-server = "run --bin server"
-run-client = "run --bin client --features client"
-run-game = "run --bin game --features client"
+run-server = "run --bin game --features server"
+run-client = "run --bin game --features client"

@@ -1,6 +1,7 @@
-use bevy::prelude::Resource;
 use std::io::Error;
 use std::net::TcpListener;
+
+use bevy::prelude::Resource;
 
 #[derive(Resource)]
 pub struct Server(pub TcpListener);
