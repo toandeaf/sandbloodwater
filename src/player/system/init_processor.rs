@@ -1,12 +1,12 @@
 use bevy::prelude::{Commands, EventReader, ResMut, Vec3};
 
 use crate::player::entity::create_character_entity;
-use crate::player::system::init::{PlayerCreateEvent, PlayerTextureAtlas, PLAYER_Z_INDEX};
+use crate::player::system::init::{PlayerSyncEvent, PlayerTextureAtlas, PLAYER_Z_INDEX};
 use crate::player::system::PlayerMapping;
 
 pub fn process_init(
     mut commands: Commands,
-    mut event_reader: EventReader<PlayerCreateEvent>,
+    mut event_reader: EventReader<PlayerSyncEvent>,
     player_texture_atlas: ResMut<PlayerTextureAtlas>,
     mut player_mapping: ResMut<PlayerMapping>,
 ) {

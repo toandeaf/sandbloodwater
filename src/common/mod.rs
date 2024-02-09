@@ -1,15 +1,16 @@
-use crate::network::NewConnectionEvent;
+use crate::network::{DisconnectEvent, NewConnectionEvent};
 use bevy::prelude::Event;
 use serde::{Deserialize, Serialize};
 
-use crate::player::{MovementEvent, PlayerCreateEvent};
+use crate::player::{MovementEvent, PlayerSyncEvent};
 
 #[derive(Serialize, Deserialize, Event)]
 pub enum EventWrapper {
     Test(String),
     Movement(MovementEvent),
-    PlayerCreate(PlayerCreateEvent),
-    NewConnectionEvent(NewConnectionEvent),
+    PlayerSync(PlayerSyncEvent),
+    NewConnection(NewConnectionEvent),
+    Disconnect(DisconnectEvent),
 }
 
 pub const SERVER_ADDRESS: &str = "127.0.0.1:7878";

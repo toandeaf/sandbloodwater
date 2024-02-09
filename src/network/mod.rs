@@ -5,4 +5,4 @@ mod server;
 
 pub use client::{Client, ClientPlugin, HttpClient};
 pub use plugin::NetworkPlugin;
-pub use resource::NewConnectionEvent;
+pub use resource::{DisconnectEvent, NewConnectionEvent};

@@ -1,5 +1,5 @@
 pub use plugin::PlayerPlugin;
-pub use system::{MovementEvent, PlayerCreateEvent};
+pub use system::{MovementEvent, PlayerSyncEvent};
 
 mod component;
 mod entity;

@@ -1,4 +1,4 @@
-use crate::player::PlayerCreateEvent;
+use crate::player::PlayerSyncEvent;
 use bevy::prelude::{App, Main, Plugin, Startup};
 use bevy::utils::hashbrown::HashMap;
 
@@ -17,7 +17,7 @@ impl Plugin for PlayerPlugin {
             .init_resource::<PlayerTextureAtlas>()
             .add_event::<MovementEvent>()
             .add_event::<InteractionEvent>()
-            .add_event::<PlayerCreateEvent>()
+            .add_event::<PlayerSyncEvent>()
             .add_event::<DropEvent>()
             .insert_resource(PlayerMapping(HashMap::new()));
 

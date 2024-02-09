@@ -1,6 +1,6 @@
 pub use drop::{drop, DropEvent};
 pub use drop_processor::process_drop;
-pub use init::{initialise_player, PlayerCreateEvent, PlayerMapping, PlayerTextureAtlas};
+pub use init::{initialise_player, PlayerMapping, PlayerSyncEvent, PlayerTextureAtlas};
 pub use init_processor::process_init;
 
 pub use interact::{interact, InteractionEvent};

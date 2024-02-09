@@ -9,7 +9,7 @@ use crate::player::entity::create_player_entity;
 pub const PLAYER_Z_INDEX: f32 = 2.;
 
 #[derive(Event, Serialize, Deserialize, Copy, Clone)]
-pub struct PlayerCreateEvent(pub Uuid, pub Vec2);
+pub struct PlayerSyncEvent(pub Uuid, pub Vec2);
 
 #[derive(Resource)]
 pub struct PlayerMapping(pub HashMap<Uuid, Entity>);
@@ -61,7 +61,7 @@ pub fn initialise_player(
 
     player_mapping.0.insert(player_uuid, entity);
 
-    client.send_event(EventWrapper::PlayerCreate(PlayerCreateEvent(
+    client.send_event(EventWrapper::PlayerSync(PlayerSyncEvent(
         player_uuid,
         beside_the_items_lol,
     )));
