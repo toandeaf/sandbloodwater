@@ -1,5 +1,6 @@
+use std::env::args;
+
 use bevy::prelude::{EventReader, EventWriter, Events, ResMut};
-use bevy::utils::Uuid;
 
 use crate::common::EventWrapper;
 use crate::network::client::resource::Client;
@@ -7,9 +8,13 @@ use crate::network::NewConnectionEvent;
 use crate::player::{MovementEvent, PlayerSyncEvent};
 
 pub fn initialise_connection(mut client: ResMut<Client>) {
-    client.send_event(EventWrapper::NewConnection(NewConnectionEvent(
-        Uuid::new_v4(),
-    )));
+    if let Some(username) = args().nth(1) {
+        client.send_event(EventWrapper::NewConnection(NewConnectionEvent(username)));
+    } else {
+        client.send_event(EventWrapper::NewConnection(NewConnectionEvent(
+            String::from("Default"),
+        )));
+    }
 }
 
 pub fn receive_events(mut client: ResMut<Client>, mut events: ResMut<Events<EventWrapper>>) {
@@ -30,7 +35,7 @@ pub fn event_handler(
             EventWrapper::Movement(event_data) => movement_event_writer.send(*event_data),
             EventWrapper::PlayerSync(event_data) => player_event_writer.send(*event_data),
             EventWrapper::Test(_) => {}
-            EventWrapper::NewConnection(_event) => {}
+            EventWrapper::NewConnection(_) => {}
             EventWrapper::Disconnect(_) => {}
         }
     }

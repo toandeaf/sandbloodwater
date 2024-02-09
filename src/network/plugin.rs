@@ -1,4 +1,5 @@
 use crate::network::client::ClientPlugin;
+use crate::network::resource::NetworkWrapper;
 use crate::network::server::ServerPlugin;
 use bevy::prelude::{App, Plugin};
 
@@ -13,7 +14,7 @@ impl Plugin for NetworkPlugin {
 
         #[cfg(feature = "server")]
         {
-            app.add_plugins(ServerPlugin);
+            app.add_event::<NetworkWrapper>().add_plugins(ServerPlugin);
         }
     }
 }

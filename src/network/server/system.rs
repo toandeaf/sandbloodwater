@@ -6,15 +6,17 @@ use std::sync::{mpsc, RwLock};
 use std::thread;
 
 use bevy::prelude::{EventReader, EventWriter};
-use bevy::utils::{HashMap, Uuid};
+use bevy::utils::HashMap;
 use lazy_static::lazy_static;
 
 use crate::common::{EventWrapper, EOF, SERVER_ADDRESS};
+use crate::network::resource::NetworkWrapper;
 use crate::network::server::resource::Server;
 
 lazy_static! {
-    static ref SESSION_CLIENTS: RwLock<HashMap<Uuid, TcpStream>> = RwLock::new(HashMap::new());
-    static ref EVENT_QUEUE: RwLock<VecDeque<EventWrapper>> = RwLock::new(VecDeque::new());
+    static ref SESSION_CLIENTS: RwLock<HashMap<u8, TcpStream>> = RwLock::new(HashMap::new());
+    static ref USERNAME_SESSION_MAP: RwLock<HashMap<String, u8>> = RwLock::new(HashMap::new());
+    static ref EVENT_QUEUE: RwLock<VecDeque<NetworkWrapper>> = RwLock::new(VecDeque::new());
 }
 
 pub fn initialize_server() {
@@ -22,7 +24,7 @@ pub fn initialize_server() {
 
     // Initialising sender and receiver for our mpsc channel. Allows the different client connection
     // threads to post back to our event receiver loop.
-    let (event_sender, event_receiver) = mpsc::channel::<EventWrapper>();
+    let (event_sender, event_receiver) = mpsc::channel::<NetworkWrapper>();
 
     // Spawning a new thread to listen for new incoming connections.
     thread::spawn(move || {
@@ -48,8 +50,8 @@ pub fn initialize_server() {
     });
 }
 
-pub fn handle_client_connection(client_stream: TcpStream, event_sender: Sender<EventWrapper>) {
-    let mut connection_uuid: Uuid = Default::default();
+pub fn handle_client_connection(client_stream: TcpStream, event_sender: Sender<NetworkWrapper>) {
+    let mut connection_id: u8 = 0;
 
     // Wait for connection event from client. We won't initialise the main event parsing loop
     // until we get our connection event, which signals that the client instance is good to go.
@@ -57,16 +59,41 @@ pub fn handle_client_connection(client_stream: TcpStream, event_sender: Sender<E
         let client_event_opt = read_client_event_stream(&client_stream);
 
         if let Some(EventWrapper::NewConnection(event_data)) = client_event_opt {
-            if let Ok(mut addresses) = SESSION_CLIENTS.write() {
-                connection_uuid = event_data.0;
-                addresses.insert(connection_uuid, client_stream.try_clone().unwrap());
+            let client_username = event_data.0;
+
+            // TODO refactor this block so it looks less shit.
+            if let Ok(session_map) = USERNAME_SESSION_MAP.read() {
+                if let Some(con_id) = session_map.get::<String>(&client_username) {
+                    connection_id = *con_id;
+                } else {
+                    let mut values: Vec<u8> = session_map.values().cloned().collect();
+                    values.sort();
+
+                    if let Some(last_value) = values.last() {
+                        connection_id = last_value + 1;
+                    } else {
+                        connection_id = 1;
+                    }
+                }
             }
 
-            event_sender
-                .send(EventWrapper::NewConnection(event_data))
-                .expect("Failed to connection main event to channel.");
+            // If connection ID hasn't properly initialized.
+            if connection_id == 0 {
+                return;
+            }
+
+            // New connection, let's collect the mapping.
+            if let Ok(mut session_map) = USERNAME_SESSION_MAP.write() {
+                session_map.insert(client_username, connection_id);
+            }
 
             break;
+        }
+    }
+
+    if let Ok(mut addresses) = SESSION_CLIENTS.write() {
+        if let Ok(cloned_stream) = client_stream.try_clone() {
+            addresses.insert(connection_id, cloned_stream);
         }
     }
 
@@ -82,7 +109,7 @@ pub fn handle_client_connection(client_stream: TcpStream, event_sender: Sender<E
                     break;
                 }
                 other_wrappers => event_sender
-                    .send(other_wrappers)
+                    .send(NetworkWrapper(connection_id, other_wrappers))
                     .expect("Failed to send main event to channel."),
             }
         }
@@ -90,7 +117,7 @@ pub fn handle_client_connection(client_stream: TcpStream, event_sender: Sender<E
 
     // If we're breaking out of the client event loop, we should probably discard the connection.
     if let Ok(mut addresses) = SESSION_CLIENTS.write() {
-        addresses.remove(&connection_uuid);
+        addresses.remove(&connection_id);
     }
 }
 
@@ -120,7 +147,7 @@ fn read_client_event_stream(client_stream: &TcpStream) -> Option<EventWrapper> {
     None
 }
 
-pub fn read_from_event_queue(mut event_writer: EventWriter<EventWrapper>) {
+pub fn read_from_event_queue(mut event_writer: EventWriter<NetworkWrapper>) {
     if let Ok(queue) = EVENT_QUEUE.read() {
         if queue.is_empty() {
             return;
@@ -134,29 +161,21 @@ pub fn read_from_event_queue(mut event_writer: EventWriter<EventWrapper>) {
     };
 }
 
-pub fn read_server_events(mut event_reader: EventReader<EventWrapper>) {
+pub fn read_server_events(mut event_reader: EventReader<NetworkWrapper>) {
     for event_wrapper in event_reader.read() {
-        match event_wrapper {
-            EventWrapper::Movement(event) => dispatch(event.0, event_wrapper),
-            EventWrapper::NewConnection(_event) => {
-                // TODO implement new connection events resulting in player sync events for everyone.
-                // dispatch(event.0, EventWrapper)
-            }
-            EventWrapper::Test(_) => {}
-            _ => {}
-        }
-    }
-}
+        if let Ok(data) = SESSION_CLIENTS.read() {
+            // TODO is there a better broadcast implementation rather than iterating like this?
 
-pub fn dispatch(uuid: Uuid, event_wrapper: &EventWrapper) {
-    if let Ok(data) = SESSION_CLIENTS.read() {
-        // TODO is there a better broadcast implementation rather than iterating like this?
-        for (key, mut connection) in data.iter() {
-            if !uuid.eq(key) {
-                connection
-                    .write_all(&serde_json::to_vec(&event_wrapper).unwrap())
-                    .unwrap();
-                connection.flush().unwrap();
+            for (client_key, mut connection) in data.iter() {
+                if !event_wrapper.0.eq(client_key) {
+                    // TODO do we need our EOF guy in here too?
+                    println!("Sending event to {}", client_key);
+                    connection
+                        .write_all(&serde_json::to_vec(&event_wrapper).unwrap())
+                        .unwrap();
+
+                    connection.flush().unwrap();
+                }
             }
         }
     }
