@@ -5,13 +5,17 @@ use std::sync::mpsc::Sender;
 use std::sync::{mpsc, RwLock};
 use std::thread;
 
-use bevy::prelude::{EventReader, EventWriter};
+use crate::player::PlayerCreateEvent;
+use crate::player::PlayerSyncEvent;
+use bevy::prelude::{EventReader, EventWriter, Query, Transform, Vec3Swizzles, With};
 use bevy::utils::HashMap;
 use lazy_static::lazy_static;
 
 use crate::common::{EventWrapper, EOF, SERVER_ADDRESS};
 use crate::network::resource::NetworkWrapper;
 use crate::network::server::resource::Server;
+use crate::network::NewConnectionEvent;
+use crate::player::{CharacterMarker, CurrentDirection, Player};
 
 lazy_static! {
     static ref SESSION_CLIENTS: RwLock<HashMap<u8, TcpStream>> = RwLock::new(HashMap::new());
@@ -84,8 +88,15 @@ pub fn handle_client_connection(client_stream: TcpStream, event_sender: Sender<N
 
             // New connection, let's collect the mapping.
             if let Ok(mut session_map) = USERNAME_SESSION_MAP.write() {
-                session_map.insert(client_username, connection_id);
+                session_map.insert(client_username.clone(), connection_id);
             }
+
+            event_sender
+                .send(NetworkWrapper(
+                    connection_id,
+                    EventWrapper::NewConnection(NewConnectionEvent(client_username)),
+                ))
+                .expect("Failed to send connection event.");
 
             break;
         }
@@ -161,22 +172,90 @@ pub fn read_from_event_queue(mut event_writer: EventWriter<NetworkWrapper>) {
     };
 }
 
-pub fn read_server_events(mut event_reader: EventReader<NetworkWrapper>) {
-    for event_wrapper in event_reader.read() {
-        if let Ok(data) = SESSION_CLIENTS.read() {
-            // TODO is there a better broadcast implementation rather than iterating like this?
+pub fn read_server_events(
+    mut event_reader: EventReader<NetworkWrapper>,
+    mut new_connection_writer: EventWriter<NewConnectionEvent>,
+    mut player_create_writer: EventWriter<PlayerCreateEvent>,
+) {
+    for network_wrapper in event_reader.read() {
+        let event_wrapper = &network_wrapper.1;
 
-            for (client_key, mut connection) in data.iter() {
-                if !event_wrapper.0.eq(client_key) {
-                    // TODO do we need our EOF guy in here too?
-                    println!("Sending event to {}", client_key);
-                    connection
-                        .write_all(&serde_json::to_vec(&event_wrapper).unwrap())
-                        .unwrap();
-
-                    connection.flush().unwrap();
-                }
+        match event_wrapper {
+            EventWrapper::NewConnection(new_connection_event) => {
+                new_connection_writer
+                    .send(NewConnectionEvent(String::from(&new_connection_event.0)));
             }
+            EventWrapper::PlayerCreate(event) => {
+                player_create_writer.send(*event);
+            }
+            EventWrapper::PlayerSync(_) => {
+                println!("THIS SHOULDNT BE HERE?");
+            }
+            _ => dispatch_all_except_origin(network_wrapper),
+        }
+    }
+}
+
+pub fn process_new_connections(
+    mut event_reader: EventReader<NewConnectionEvent>,
+    player_query: Query<(&Transform, &CharacterMarker, &CurrentDirection)>,
+) {
+    for _event in event_reader.read() {
+        if let Ok(data) = SESSION_CLIENTS.read() {
+            println!("There are {} connections", data.len());
+        }
+
+        for (transform, marker, direction) in player_query.into_iter() {
+            let player_sync_event = EventWrapper::PlayerSync(PlayerSyncEvent(
+                marker.0,
+                transform.translation.xy(),
+                direction.0,
+            ));
+            dispatch_all(&player_sync_event)
+        }
+    }
+}
+
+fn dispatch_all_except_origin(network_wrapper: &NetworkWrapper) {
+    let origin_client_key = network_wrapper.0;
+    let event_wrapper = &network_wrapper.1;
+
+    if let Ok(data) = SESSION_CLIENTS.read() {
+        // TODO is there a better broadcast implementation rather than iterating like this?
+
+        for (other_client_key, mut connection) in data.iter() {
+            if !origin_client_key.eq(other_client_key) {
+                // TODO do we need our EOF guy in here too?
+                println!(
+                    "SELECTED - Sending event {}",
+                    serde_json::to_string::<EventWrapper>(event_wrapper).unwrap()
+                );
+
+                let mut dataaa = serde_json::to_vec(event_wrapper).unwrap();
+                dataaa.push(EOF);
+                connection.write_all(&dataaa).unwrap();
+
+                connection.flush().unwrap();
+            }
+        }
+    }
+}
+
+fn dispatch_all(event_wrapper: &EventWrapper) {
+    if let Ok(data) = SESSION_CLIENTS.read() {
+        // TODO is there a better broadcast implementation rather than iterating like this?
+
+        for mut connection in data.values() {
+            println!(
+                "ALL - Sending event {}",
+                serde_json::to_string::<EventWrapper>(event_wrapper).unwrap()
+            );
+
+            let mut dataaa = serde_json::to_vec(event_wrapper).unwrap();
+            dataaa.push(EOF);
+            connection.write_all(&dataaa).unwrap();
+
+            connection.flush().unwrap();
         }
     }
 }

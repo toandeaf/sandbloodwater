@@ -34,7 +34,7 @@ impl Client {
                 self.0.writer.flush().unwrap();
             }
 
-            println!("Sending event: {}", String::from_utf8(event_bytes).unwrap());
+            // println!("Sending event: {}", String::from_utf8(event_bytes).unwrap());
         }
     }
 

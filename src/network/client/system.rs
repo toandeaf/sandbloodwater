@@ -1,5 +1,6 @@
 use std::env::args;
 
+use crate::player::PlayerCreateEvent;
 use bevy::prelude::{EventReader, EventWriter, Events, ResMut};
 
 use crate::common::EventWrapper;
@@ -29,11 +30,13 @@ pub fn event_handler(
     mut event_reader: EventReader<EventWrapper>,
     mut movement_event_writer: EventWriter<MovementEvent>,
     mut player_event_writer: EventWriter<PlayerSyncEvent>,
+    mut player_create_writer: EventWriter<PlayerCreateEvent>,
 ) {
     for event in event_reader.read() {
         match event {
             EventWrapper::Movement(event_data) => movement_event_writer.send(*event_data),
             EventWrapper::PlayerSync(event_data) => player_event_writer.send(*event_data),
+            EventWrapper::PlayerCreate(event_data) => player_create_writer.send(*event_data),
             EventWrapper::Test(_) => {}
             EventWrapper::NewConnection(_) => {}
             EventWrapper::Disconnect(_) => {}

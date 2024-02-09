@@ -1,4 +1,5 @@
 use bevy::prelude::Resource;
+use bevy::utils::Uuid;
 
 const PLAYER_SIZE: f32 = 20.;
 const PLAYER_SPEED: f32 = 300.;
@@ -9,6 +10,9 @@ pub struct PlayerAttributes {
     pub radius: f32,
     pub speed: f32,
 }
+
+#[derive(Resource)]
+pub struct PlayerUuid(pub Uuid);
 
 pub fn create_player_resources() -> PlayerAttributes {
     PlayerAttributes {

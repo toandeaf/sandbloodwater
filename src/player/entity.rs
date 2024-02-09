@@ -33,11 +33,12 @@ pub fn create_character_entity(
     uuid: Uuid,
     texture_atlas: Handle<TextureAtlas>,
     starting_position: Vec3,
+    direction: Direction,
 ) -> CharacterBundle {
     CharacterBundle {
         character_marker: CharacterMarker(uuid),
         state: PlayerState {
-            direction: CurrentDirection(Direction::Down),
+            direction: CurrentDirection(direction),
             activity: CurrentActivity(Activity::Idle),
         },
         timer: AnimationTimer(Timer::from_seconds(ANIMATION_SPEED, TimerMode::Repeating)),
@@ -60,9 +61,15 @@ pub fn create_player_entity(
     uuid: Uuid,
     texture_atlas: Handle<TextureAtlas>,
     starting_position: Vec3,
+    direction: Direction,
 ) -> PlayerBundle {
     PlayerBundle {
         player: Player,
-        character_bundle: create_character_entity(uuid, texture_atlas, starting_position),
+        character_bundle: create_character_entity(
+            uuid,
+            texture_atlas,
+            starting_position,
+            direction,
+        ),
     }
 }

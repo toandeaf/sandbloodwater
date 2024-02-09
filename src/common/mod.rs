@@ -2,12 +2,13 @@ use crate::network::{DisconnectEvent, NewConnectionEvent};
 use bevy::prelude::Event;
 use serde::{Deserialize, Serialize};
 
-use crate::player::{MovementEvent, PlayerSyncEvent};
+use crate::player::{MovementEvent, PlayerCreateEvent, PlayerSyncEvent};
 
 #[derive(Serialize, Deserialize, Event)]
 pub enum EventWrapper {
     Test(String),
     Movement(MovementEvent),
+    PlayerCreate(PlayerCreateEvent),
     PlayerSync(PlayerSyncEvent),
     NewConnection(NewConnectionEvent),
     Disconnect(DisconnectEvent),
