@@ -5,10 +5,10 @@ use bevy::utils::hashbrown::HashMap;
 
 use crate::player::resource::{create_player_resources, PlayerUuid};
 use crate::player::system::{
-    dispatch_move, drop, dispatch_init, initialise_player, interact, move_player,
-    process_direction_change, process_drop, process_interact, process_position_change,
-    process_sync, DropEvent, InteractionEvent, MovementEvent, PlayerCreateEvent, PlayerMapping,
-    PlayerTextureAtlas,
+    dispatch_init, dispatch_move, drop, initialise_player, interact, move_player,
+    process_direction_change, process_drop, process_init, process_interact,
+    process_position_change, process_sync, DropEvent, InteractionEvent, MovementEvent,
+    PlayerCreateEvent, PlayerMapping, PlayerTextureAtlas,
 };
 
 pub struct PlayerPlugin;
@@ -31,6 +31,7 @@ impl Plugin for PlayerPlugin {
                     process_interact,
                     process_drop,
                     process_sync,
+                    process_init,
                 ),
             )
             .insert_resource(PlayerMapping(HashMap::new()));
@@ -40,13 +41,7 @@ impl Plugin for PlayerPlugin {
         {
             app.add_systems(Startup, initialise_player).add_systems(
                 Main,
-                (
-                    move_player,
-                    interact,
-                    drop,
-                    dispatch_move,
-                    dispatch_init,
-                ),
+                (move_player, interact, drop, dispatch_move, dispatch_init),
             );
         }
     }

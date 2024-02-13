@@ -14,7 +14,8 @@ pub fn process_init(
     player_uuid: Res<PlayerUuid>,
 ) {
     for event in event_reader.read() {
-        let uuid = player_uuid.0;
+        let event_uuid = event.0;
+        let player_uuid = player_uuid.0;
 
         // if let Some(entity) = player_mapping.0.remove(&uuid) {
         //     // If they already exist, despawn em. We're probably gonna make this a fixed value and
@@ -22,7 +23,7 @@ pub fn process_init(
         //     commands.entity(entity).despawn();
         // }
 
-        let player_entity = if uuid == player_uuid.0 {
+        let player_entity = if event_uuid.eq(&player_uuid) {
             commands
                 .spawn(create_player_entity(
                     event.0,
@@ -42,6 +43,7 @@ pub fn process_init(
                 .id()
         };
 
-        player_mapping.0.insert(uuid, player_entity);
+        println!("Spawning shit {}", event_uuid);
+        player_mapping.0.insert(event_uuid, player_entity);
     }
 }
