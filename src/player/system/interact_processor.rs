@@ -1,4 +1,4 @@
-use bevy::prelude::{BuildChildrenTransformExt, Commands, EventReader, Query, Transform, With};
+use bevy::prelude::*;
 
 use crate::item::{InteractionType, Interactive, Item};
 use crate::player::component::{Activity, CurrentActivity, Player};
