@@ -1,38 +1,45 @@
 use bevy::prelude::{EventReader, Parent, Query, Res, TextureAtlasSprite, Transform, With};
+use bevy::utils::Uuid;
 
 use crate::item::Item;
-use crate::player::component::{CurrentDirection, Direction, Player};
+use crate::player::component::{CurrentDirection, Direction};
 use crate::player::resource::PlayerAttributes;
 use crate::player::system::r#move::MovementEvent;
+use crate::player::system::PlayerMapping;
 
 #[allow(clippy::type_complexity)]
 pub fn process_position_change(
     mut event_reader: EventReader<MovementEvent>,
-    mut player_query: Query<
-        (
-            &mut Transform,
-            &mut TextureAtlasSprite,
-            &mut CurrentDirection,
-        ),
-        With<Player>,
-    >,
+    mut movement_query: Query<(
+        &mut Transform,
+        &mut TextureAtlasSprite,
+        &mut CurrentDirection,
+    )>,
+    player_mapping: Res<PlayerMapping>,
 ) {
     for event in event_reader.read() {
-        let direction = &event.0;
-        let new_speed = &event.1;
+        let uuid = &event.0;
+        let direction = &event.1;
+        let new_speed = &event.2;
 
-        let player_res = player_query.get_single_mut();
+        // TODO - this is absolutely broken when both players occupy the same index. Needs rework.
+        let player_entity_equivalent_opt = player_mapping.0.get::<Uuid>(uuid);
 
-        if let Ok(player_bundle) = player_res {
-            let (mut transform, mut movement_sprite_sheet, mut current_direction) = player_bundle;
+        if let Some(player_entity_equivalent) = player_entity_equivalent_opt {
+            let player_res = movement_query.get_mut(*player_entity_equivalent);
 
-            // Update player direction
-            current_direction.0 = *direction;
-            // Update sprite tile
-            movement_sprite_sheet.index =
-                calculate_next_sprite(direction, &movement_sprite_sheet.index);
-            // Update position
-            transform.translation = direction.new_position(transform.translation, *new_speed);
+            if let Ok(player_bundle) = player_res {
+                let (mut transform, mut movement_sprite_sheet, mut current_direction) =
+                    player_bundle;
+
+                // Update player direction
+                current_direction.0 = *direction;
+                // Update sprite tile
+                movement_sprite_sheet.index =
+                    calculate_next_sprite(direction, &movement_sprite_sheet.index);
+                // Update position
+                transform.translation = direction.new_position(transform.translation, *new_speed);
+            }
         }
     }
 }
@@ -46,7 +53,7 @@ pub fn process_direction_change(
 
     for event in event_reader.read() {
         for mut child_transform in item_query.iter_mut() {
-            child_transform.translation = event.0.relative_child_direction_change(player_radius);
+            child_transform.translation = event.1.relative_child_direction_change(player_radius);
         }
     }
 }

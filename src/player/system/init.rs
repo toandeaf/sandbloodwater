@@ -1,13 +1,47 @@
 use bevy::prelude::*;
+use bevy::utils::{HashMap, Uuid};
+use serde::{Deserialize, Serialize};
 
-use crate::player::entity::create_player_entity;
+use crate::common::EventWrapper::PlayerCreate;
+use crate::network::Client;
+use crate::player::component::Direction;
+use crate::player::resource::PlayerUuid;
 
-const PLAYER_Z_INDEX: f32 = 2.;
+pub const PLAYER_Z_INDEX: f32 = 2.;
+
+#[derive(Event, Serialize, Deserialize, Copy, Clone)]
+pub struct PlayerCreateEvent(pub Uuid, pub Vec2, pub Direction);
+
+#[derive(Event, Serialize, Deserialize, Copy, Clone)]
+pub struct PlayerSyncEvent(pub Uuid, pub Vec2, pub Direction);
+
+#[derive(Resource)]
+pub struct PlayerMapping(pub HashMap<Uuid, Entity>);
+
+#[derive(Resource)]
+pub struct PlayerTextureAtlas(pub Handle<TextureAtlas>);
+
+impl Default for PlayerTextureAtlas {
+    fn default() -> Self {
+        PlayerTextureAtlas(Handle::default())
+    }
+}
+
+impl Default for PlayerMapping {
+    fn default() -> Self {
+        {
+            PlayerMapping(HashMap::new())
+        }
+    }
+}
 
 pub fn initialise_player(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    mut event_writer: EventWriter<PlayerCreateEvent>,
+    mut player_uuid: ResMut<PlayerUuid>,
+    mut client: ResMut<Client>,
 ) {
     let texture_handle = asset_server.load("embedded://player/walk.png");
 
@@ -16,10 +50,14 @@ pub fn initialise_player(
 
     let texture_atlas_handle = texture_atlases.add(texture_atlas_walk);
 
-    let beside_the_items_lol = Vec2::new(100., 200.);
+    commands.insert_resource(PlayerTextureAtlas(texture_atlas_handle.clone()));
 
-    commands.spawn(create_player_entity(
-        texture_atlas_handle,
-        Vec3::from((beside_the_items_lol, PLAYER_Z_INDEX)),
-    ));
+    let beside_the_items_lol = Vec2::new(200., 100.);
+
+    player_uuid.0 = Uuid::new_v4();
+
+    let event = PlayerCreateEvent(player_uuid.0, beside_the_items_lol, Direction::Down);
+
+    event_writer.send(event);
+    client.send_event(PlayerCreate(event));
 }

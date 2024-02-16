@@ -15,10 +15,6 @@ pub fn load_map_config_from_file(map_string: &str) -> Vec<Vec<usize>> {
             if let Ok(parsed_num) = num {
                 characters.push(parsed_num);
             }
-
-            if let Err(_) = num {
-                println!("Ahhh!");
-            }
         }
         tile_rows.push(characters);
     }

@@ -1,23 +1,28 @@
+use crate::common::EventWrapper;
 use bevy::prelude::*;
+use bevy::utils::Uuid;
+use serde::{Deserialize, Serialize};
 
 use crate::item::Solid;
-use crate::player::component::{AnimationTimer, Direction, Player};
+use crate::network::Client;
+use crate::player::component::{AnimationTimer, CharacterMarker, Direction, Player};
 use crate::player::resource::PlayerAttributes;
 use crate::world::TileType;
 
 pub type Speed = f32;
+
 const DEFAULT_SPEED: f32 = 1.;
 const DEFAULT_COLLISION_SPEED: Speed = 0.;
 
-#[derive(Event)]
-pub struct MovementEvent(pub Direction, pub Speed);
+#[derive(Event, Serialize, Deserialize, Copy, Clone)]
+pub struct MovementEvent(pub Uuid, pub Direction, pub Speed);
 
 // TODO work out how to properly abstract those bundles to reduce complexity
-#[allow(clippy::type_complexity)]
+#[allow(clippy::type_complexity, clippy::too_many_arguments)]
 pub fn move_player(
     mut event_writer: EventWriter<MovementEvent>,
     mut player_query: Query<
-        (&mut Transform, &mut AnimationTimer),
+        (&mut Transform, &mut AnimationTimer, &CharacterMarker),
         (With<Player>, Without<TileType>),
     >,
     tile_query: Query<(&Transform, &TextureAtlasSprite, &TileType), With<TileType>>,
@@ -25,11 +30,14 @@ pub fn move_player(
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
     player_attributes: Res<PlayerAttributes>,
+    mut client: ResMut<Client>,
 ) {
     let player_radius = player_attributes.radius;
     let player_base_speed = player_attributes.speed;
 
-    for (player_transform, mut timer) in &mut player_query {
+    let player_bundle_res = player_query.get_single_mut();
+
+    if let Ok((player_transform, mut timer, uuid)) = player_bundle_res {
         timer.tick(time.delta());
 
         if timer.just_finished() {
@@ -57,7 +65,10 @@ pub fn move_player(
                     // effect on the actual speed of the game lol.
                     let new_speed = player_base_speed * speed_modifier * time.delta_seconds();
 
-                    event_writer.send(MovementEvent(direction, new_speed));
+                    let movement_event = MovementEvent(uuid.0, direction, new_speed);
+
+                    event_writer.send(movement_event);
+                    client.send_event(EventWrapper::Movement(movement_event));
                 }
             });
         }
