@@ -140,16 +140,10 @@ pub fn dispatch_all_except_origin(network_wrapper: &NetworkWrapper) {
 
         for (other_client_key, mut connection) in data.iter() {
             if !origin_client_key.eq(other_client_key) {
-                // TODO do we need our EOF guy in here too?
-                println!(
-                    "SELECTED - Sending event {}",
-                    serde_json::to_string::<EventWrapper>(event_wrapper).unwrap()
-                );
-
                 let mut event_data = serde_json::to_vec(event_wrapper).unwrap();
                 event_data.push(EOF);
-                connection.write_all(&event_data).unwrap();
 
+                connection.write_all(&event_data).unwrap();
                 connection.flush().unwrap();
             }
         }
@@ -159,16 +153,10 @@ pub fn dispatch_all_except_origin(network_wrapper: &NetworkWrapper) {
 pub fn dispatch_all(event_wrapper: &EventWrapper) {
     if let Ok(data) = SESSION_CLIENTS.read() {
         for mut connection in data.values() {
-            println!(
-                "ALL - Sending event {}",
-                serde_json::to_string::<EventWrapper>(event_wrapper).unwrap()
-            );
-
             let mut event_data = serde_json::to_vec(event_wrapper).unwrap();
             event_data.push(EOF);
 
             connection.write_all(&event_data).unwrap();
-
             connection.flush().unwrap();
         }
     }

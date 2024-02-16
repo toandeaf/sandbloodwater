@@ -1,5 +1,5 @@
 mod network_processor;
-mod new_connection_processor;
+mod sync;
 
 pub use network_processor::process_network_events;
-pub use new_connection_processor::process_new_connection_events;
+pub use sync::{insert_sync_config, sync};

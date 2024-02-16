@@ -1,8 +1,9 @@
-use crate::common::EventWrapper::PlayerCreate;
 use bevy::prelude::*;
 use bevy::utils::{HashMap, Uuid};
 use serde::{Deserialize, Serialize};
 
+use crate::common::EventWrapper::PlayerCreate;
+use crate::network::Client;
 use crate::player::component::Direction;
 use crate::player::resource::PlayerUuid;
 
@@ -40,6 +41,7 @@ pub fn initialise_player(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut event_writer: EventWriter<PlayerCreateEvent>,
     mut player_uuid: ResMut<PlayerUuid>,
+    mut client: ResMut<Client>,
 ) {
     let texture_handle = asset_server.load("embedded://player/walk.png");
 
@@ -54,9 +56,8 @@ pub fn initialise_player(
 
     player_uuid.0 = Uuid::new_v4();
 
-    event_writer.send(PlayerCreateEvent(
-        player_uuid.0,
-        beside_the_items_lol,
-        Direction::Down,
-    ));
+    let event = PlayerCreateEvent(player_uuid.0, beside_the_items_lol, Direction::Down);
+
+    event_writer.send(event);
+    client.send_event(PlayerCreate(event));
 }

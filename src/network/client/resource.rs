@@ -33,8 +33,6 @@ impl Client {
             if bytes_written == event_bytes.len() {
                 self.0.writer.flush().unwrap();
             }
-
-            // println!("Sending event: {}", String::from_utf8(event_bytes).unwrap());
         }
     }
 

@@ -1,51 +1,34 @@
-use crate::player::entity::{create_character_entity, create_player_entity};
-use crate::player::resource::PlayerUuid;
-use crate::player::system::init::PLAYER_Z_INDEX;
-use crate::player::system::{PlayerMapping, PlayerTextureAtlas};
-use crate::player::PlayerSyncEvent;
-use bevy::prelude::{Commands, EventReader, Res, ResMut, Vec3};
+use bevy::prelude::{EventReader, EventWriter, Query, ResMut, Transform, With};
+use bevy::utils::Uuid;
+
+use crate::player::system::PlayerMapping;
+use crate::player::{CharacterMarker, CurrentDirection, PlayerCreateEvent, PlayerSyncEvent};
 
 pub fn process_sync(
-    mut commands: Commands,
+    mut character_query: Query<(&mut Transform, &mut CurrentDirection), With<CharacterMarker>>,
     mut event_reader: EventReader<PlayerSyncEvent>,
-    player_texture_atlas: ResMut<PlayerTextureAtlas>,
-    mut player_mapping: ResMut<PlayerMapping>,
-    player_uuid: Res<PlayerUuid>,
+    mut player_create_writer: EventWriter<PlayerCreateEvent>,
+    player_mapping: ResMut<PlayerMapping>,
 ) {
-    for event in event_reader.read() {
-        let uuid = player_uuid.0;
+    for sync_event in event_reader.read() {
+        let (character_uuid, new_position, new_direction) =
+            (sync_event.0, sync_event.1, sync_event.2);
 
-        if let Some(entity) = player_mapping.0.remove(&uuid) {
-            // If they already exist, despawn em. We're probably gonna make this a fixed value and
-            // not a dynamically generated uuid so we can get some consistency across sessions.
-            commands.entity(entity).despawn();
+        if let Some(character_entity) = player_mapping.0.get::<Uuid>(&character_uuid) {
+            let bundle_res = character_query.get_mut(*character_entity);
+
+            if let Ok((mut transform, mut direction)) = bundle_res {
+                transform.translation.x = new_position.x;
+                transform.translation.y = new_position.y;
+                direction.0 = new_direction;
+            }
+            return;
         }
 
-        println!(
-            "Player uuid is {} and event uuid is {}",
-            player_uuid.0.to_string(),
-            uuid.to_string()
-        );
-        let player_entity = if uuid == player_uuid.0 {
-            commands
-                .spawn(create_player_entity(
-                    event.0,
-                    player_texture_atlas.0.clone(),
-                    Vec3::from((event.1, PLAYER_Z_INDEX)),
-                    event.2,
-                ))
-                .id()
-        } else {
-            commands
-                .spawn(create_character_entity(
-                    event.0,
-                    player_texture_atlas.0.clone(),
-                    Vec3::from((event.1, PLAYER_Z_INDEX)),
-                    event.2,
-                ))
-                .id()
-        };
-
-        player_mapping.0.insert(uuid, player_entity);
+        player_create_writer.send(PlayerCreateEvent(
+            character_uuid,
+            new_position,
+            new_direction,
+        ));
     }
 }

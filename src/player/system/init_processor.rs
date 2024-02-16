@@ -43,7 +43,6 @@ pub fn process_init(
                 .id()
         };
 
-        println!("Spawning shit {}", event_uuid);
         player_mapping.0.insert(event_uuid, player_entity);
     }
 }

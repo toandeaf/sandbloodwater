@@ -17,7 +17,7 @@ pub struct AnimationTimer(pub Timer);
 #[derive(Component)]
 pub struct CurrentDirection(pub Direction);
 
-#[derive(Copy, Clone, Serialize, Deserialize)]
+#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
 pub enum Direction {
     Up,
     Down,
