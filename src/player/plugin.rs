@@ -1,7 +1,7 @@
 use crate::player::PlayerSyncEvent;
 use bevy::prelude::{App, Main, Plugin, Startup};
-use bevy::reflect::Uuid;
 use bevy::utils::hashbrown::HashMap;
+use bevy::utils::Uuid;
 
 use crate::player::resource::{create_player_resources, PlayerUuid};
 use crate::player::system::{

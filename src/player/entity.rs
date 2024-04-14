@@ -1,9 +1,10 @@
 use bevy::prelude::*;
-use bevy::utils::{default, Uuid};
+use bevy::utils::Uuid;
 
 use crate::player::component::{
     Activity, AnimationTimer, CharacterMarker, CurrentActivity, CurrentDirection, Direction, Player,
 };
+use crate::player::system::PlayerTextureAtlas;
 
 // The higher this is, the slower the animation
 const ANIMATION_SPEED: f32 = 0.040;
@@ -31,7 +32,7 @@ pub struct PlayerState {
 
 pub fn create_character_entity(
     uuid: Uuid,
-    texture_atlas: Handle<TextureAtlas>,
+    player_atlas: PlayerTextureAtlas,
     starting_position: Vec3,
     direction: Direction,
 ) -> CharacterBundle {
@@ -47,11 +48,12 @@ pub fn create_character_entity(
                 translation: starting_position,
                 ..default()
             },
-            sprite: TextureAtlasSprite {
-                custom_size: Some(Vec2::splat(PLAYER_SIZE)),
-                ..default()
+            sprite: Sprite::default(),
+            atlas: TextureAtlas {
+                layout: player_atlas.0,
+                index: 0,
             },
-            texture_atlas,
+            texture: player_atlas.1,
             ..default()
         },
     }
@@ -59,17 +61,12 @@ pub fn create_character_entity(
 
 pub fn create_player_entity(
     uuid: Uuid,
-    texture_atlas: Handle<TextureAtlas>,
+    player_atlas: PlayerTextureAtlas,
     starting_position: Vec3,
     direction: Direction,
 ) -> PlayerBundle {
     PlayerBundle {
         player: Player,
-        character_bundle: create_character_entity(
-            uuid,
-            texture_atlas,
-            starting_position,
-            direction,
-        ),
+        character_bundle: create_character_entity(uuid, player_atlas, starting_position, direction),
     }
 }

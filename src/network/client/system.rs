@@ -18,7 +18,10 @@ pub fn initialise_connection(mut client: ResMut<Client>) {
     }
 }
 
-pub fn fetch_events_from_server(mut client: ResMut<Client>, mut events: ResMut<Events<EventWrapper>>) {
+pub fn fetch_events_from_server(
+    mut client: ResMut<Client>,
+    mut events: ResMut<Events<EventWrapper>>,
+) {
     let received_events = client.receive_event();
 
     for event in received_events.into_iter() {
@@ -34,9 +37,15 @@ pub fn handle_client_events(
 ) {
     for event in event_reader.read() {
         match event {
-            EventWrapper::Movement(event_data) => movement_event_writer.send(*event_data),
-            EventWrapper::PlayerSync(event_data) => player_sync_writer.send(*event_data),
-            EventWrapper::PlayerCreate(event_data) => player_create_writer.send(*event_data),
+            EventWrapper::Movement(event_data) => {
+                movement_event_writer.send(*event_data);
+            }
+            EventWrapper::PlayerSync(event_data) => {
+                player_sync_writer.send(*event_data);
+            }
+            EventWrapper::PlayerCreate(event_data) => {
+                player_create_writer.send(*event_data);
+            }
             EventWrapper::Test(_) => {}
             EventWrapper::NewConnection(_) => {}
             EventWrapper::Disconnect(_) => {}

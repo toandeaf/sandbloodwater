@@ -14,6 +14,6 @@ pub enum EventWrapper {
     Disconnect(DisconnectEvent),
 }
 
-pub const SERVER_ADDRESS: &str = "192.168.0.36:7878";
+pub const SERVER_ADDRESS: &str = "192.168.1.175:7878";
 
 pub const EOF: u8 = 0x03;

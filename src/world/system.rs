@@ -1,6 +1,5 @@
 use bevy::asset::Assets;
-use bevy::prelude::{AssetServer, Commands, Handle, Image, Res, ResMut, Vec2};
-use bevy::sprite::TextureAtlas;
+use bevy::prelude::{AssetServer, Commands, Handle, Image, Res, ResMut, TextureAtlasLayout, Vec2};
 
 use crate::world::resource::{MapHandles, MapLayout};
 
@@ -14,13 +13,12 @@ use crate::world::resource::{MapHandles, MapLayout};
 pub fn init_map_assets(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let image_handle: Handle<Image> = asset_server.load("embedded://world/main.png");
+    let atlas_texture_handle: Handle<Image> = asset_server.load("embedded://world/main.png");
 
-    let texture_atlas =
-        TextureAtlas::from_grid(image_handle, Vec2::new(32., 32.0), 46, 46, None, None);
-    let texture_handle = texture_atlases.add(texture_atlas);
+    let texture_atlas = TextureAtlasLayout::from_grid(Vec2::new(32., 32.0), 46, 46, None, None);
+    let atlas_layout_handle = texture_atlases.add(texture_atlas);
 
     // The embedded assets plugin allows us to bundle our assets with our executable.
     // In this case, our wasm binary.
@@ -32,7 +30,8 @@ pub fn init_map_assets(
         water_handle,
         land_handle,
         solid_handle,
-        texture_handle,
+        atlas_layout_handle,
+        atlas_texture_handle,
     };
 
     commands.insert_resource(map_handles);

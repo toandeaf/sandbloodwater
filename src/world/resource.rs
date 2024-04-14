@@ -22,7 +22,8 @@ pub struct MapHandles {
     pub land_handle: Handle<MapLayout>,
     pub solid_handle: Handle<MapLayout>,
     pub water_handle: Handle<MapLayout>,
-    pub texture_handle: Handle<TextureAtlas>,
+    pub atlas_layout_handle: Handle<TextureAtlasLayout>,
+    pub atlas_texture_handle: Handle<Image>,
 }
 
 #[derive(Default)]
