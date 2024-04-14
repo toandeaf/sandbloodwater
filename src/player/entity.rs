@@ -8,7 +8,7 @@ use crate::player::system::PlayerTextureAtlas;
 
 // The higher this is, the slower the animation
 const ANIMATION_SPEED: f32 = 0.040;
-const PLAYER_SIZE: f32 = 40.;
+const PLAYER_SIZE: Option<Vec2> = Some(Vec2::new(40., 40.));
 
 #[derive(Bundle)]
 pub struct PlayerBundle {
@@ -48,7 +48,10 @@ pub fn create_character_entity(
                 translation: starting_position,
                 ..default()
             },
-            sprite: Sprite::default(),
+            sprite: Sprite {
+                custom_size: PLAYER_SIZE,
+                ..default()
+            },
             atlas: TextureAtlas {
                 layout: player_atlas.0,
                 index: 0,

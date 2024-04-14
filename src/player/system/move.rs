@@ -53,6 +53,8 @@ pub fn move_player(
                 if let Some(direction) = new_direction_opt {
                     let player_data = (player_transform.translation, player_radius, &direction);
 
+                    // TODO - collision detection borked after bevy bump.
+                    // AtlasSprite -> Sprite may have thrown the query off.
                     let speed_modifier = calculate_collision_or_speed_adjustment(
                         &tile_query,
                         &solid_query,
