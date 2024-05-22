@@ -1,7 +1,9 @@
-use crate::common::{EventWrapper, EOF};
-use bevy::prelude::Resource;
 use std::io::{BufRead, BufReader, BufWriter, Error, Write};
 use std::net::TcpStream;
+
+use bevy::prelude::Resource;
+
+use crate::common::{EOF, EventWrapper};
 
 #[derive(Resource)]
 pub struct Client(pub HttpClient);
@@ -12,7 +14,7 @@ pub struct HttpClient {
 }
 
 impl Client {
-    pub fn new(addr: &str) -> Result<Client, Error> {
+    pub fn new(addr: String) -> Result<Client, Error> {
         let connection = TcpStream::connect(addr)?;
         connection.set_nonblocking(true)?;
 

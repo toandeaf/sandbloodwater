@@ -5,8 +5,9 @@ use std::thread;
 
 use bevy::prelude::EventWriter;
 use lazy_static::lazy_static;
+use local_ip_address::local_ip;
 
-use crate::common::SERVER_ADDRESS;
+use crate::common::GAME_PORT;
 use crate::network::resource::NetworkWrapper;
 use crate::network::server::infra::client_handler::handle_client_connection;
 use crate::network::server::resource::Server;
@@ -16,7 +17,11 @@ lazy_static! {
 }
 
 pub fn initialize_server() {
-    let server = Server::new(SERVER_ADDRESS).expect("Couldn't initialise server.");
+    let local_ip = local_ip().unwrap();
+
+    let formatted_local_ip = local_ip.to_string() + GAME_PORT;
+
+    let server = Server::new(formatted_local_ip).expect("Couldn't initialise server.");
 
     // Initialising sender and receiver for our mpsc channel. Allows the different client connection
     // threads to post back to our event receiver loop.

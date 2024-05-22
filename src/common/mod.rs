@@ -1,7 +1,7 @@
-use crate::network::{DisconnectEvent, NewConnectionEvent};
 use bevy::prelude::Event;
 use serde::{Deserialize, Serialize};
 
+use crate::network::{DisconnectEvent, NewConnectionEvent};
 use crate::player::{MovementEvent, PlayerCreateEvent, PlayerSyncEvent};
 
 #[derive(Serialize, Deserialize, Event)]
@@ -14,6 +14,6 @@ pub enum EventWrapper {
     Disconnect(DisconnectEvent),
 }
 
-pub const SERVER_ADDRESS: &str = "192.168.1.175:7878";
+pub const GAME_PORT: &str = ":7878";
 
 pub const EOF: u8 = 0x03;
