@@ -1,4 +1,4 @@
-use bevy::prelude::{EventReader, Parent, Query, Res, TextureAtlasSprite, Transform, With};
+use bevy::prelude::{EventReader, Parent, Query, Res, TextureAtlas, Transform, With};
 use bevy::utils::Uuid;
 
 use crate::item::Item;
@@ -10,11 +10,7 @@ use crate::player::system::PlayerMapping;
 #[allow(clippy::type_complexity)]
 pub fn process_position_change(
     mut event_reader: EventReader<MovementEvent>,
-    mut movement_query: Query<(
-        &mut Transform,
-        &mut TextureAtlasSprite,
-        &mut CurrentDirection,
-    )>,
+    mut movement_query: Query<(&mut Transform, &mut TextureAtlas, &mut CurrentDirection)>,
     player_mapping: Res<PlayerMapping>,
 ) {
     for event in event_reader.read() {

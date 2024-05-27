@@ -20,7 +20,8 @@ pub fn process_map_asset_init(
     map_layouts: Res<Assets<MapLayout>>,
 ) {
     for event in reader.read() {
-        let texture_handle = &map_state.texture_handle;
+        let atlas_layout_handle = map_state.atlas_layout_handle.clone();
+        let atlas_texture_handle = map_state.atlas_texture_handle.clone();
 
         let (map_content_opt, tile_type) =
             if event.is_loaded_with_dependencies(map_state.land_handle.id()) {
@@ -33,13 +34,20 @@ pub fn process_map_asset_init(
                 (None, TileType::Unsupported)
             };
 
-        render_map_by_layer(&mut commands, texture_handle, map_content_opt, tile_type);
+        render_map_by_layer(
+            &mut commands,
+            atlas_layout_handle,
+            atlas_texture_handle,
+            map_content_opt,
+            tile_type,
+        );
     }
 }
 
 pub fn render_map_by_layer(
     commands: &mut Commands,
-    texture_handle: &Handle<TextureAtlas>,
+    atlas_layout_handle: Handle<TextureAtlasLayout>,
+    atlas_texture_handle: Handle<Image>,
     map_content_opt: Option<&MapLayout>,
     tile_type: TileType,
 ) {
@@ -57,10 +65,10 @@ pub fn render_map_by_layer(
                 if !tile_index.eq(&EMPTY_TILE_INDEX) {
                     let tile_bundle = create_map_tile_entity(
                         Vec3::new(starting_x, starting_y, 0.),
-                        TILE_SIZE,
                         tile_type,
                         tile_index,
-                        texture_handle.clone(),
+                        atlas_layout_handle.clone(),
+                        atlas_texture_handle.clone(),
                     );
 
                     match tile_bundle {

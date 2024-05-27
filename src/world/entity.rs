@@ -24,10 +24,10 @@ pub enum TileBundle {
 
 pub fn create_map_tile_entity(
     tile_position: Vec3,
-    tile_size: f32,
     tile_type: TileType,
     sprite_index: usize,
-    texture_atlas: Handle<TextureAtlas>,
+    atlas_layout_handle: Handle<TextureAtlasLayout>,
+    atlas_texture_handle: Handle<Image>,
 ) -> TileBundle {
     let world_tile_bundle = WorldTileBundle {
         sprite_bundle: SpriteSheetBundle {
@@ -35,12 +35,12 @@ pub fn create_map_tile_entity(
                 translation: tile_position,
                 ..default()
             },
-            texture_atlas,
-            sprite: TextureAtlasSprite {
+            texture: atlas_texture_handle,
+            atlas: TextureAtlas {
+                layout: atlas_layout_handle,
                 index: sprite_index,
-                custom_size: Some(Vec2::splat(tile_size)),
-                ..default()
             },
+            sprite: Sprite::default(),
             ..default()
         },
         tile_type,

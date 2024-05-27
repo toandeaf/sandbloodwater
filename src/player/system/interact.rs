@@ -11,7 +11,7 @@ pub struct InteractionEvent(pub Entity, pub Entity, pub Vec3);
 pub fn interact(
     mut event_writer: EventWriter<InteractionEvent>,
     player_attributes: Res<PlayerAttributes>,
-    keyboard_input: ResMut<Input<KeyCode>>,
+    keyboard_input: ResMut<ButtonInput<KeyCode>>,
     mut player_query: Query<(&Transform, Entity, &CurrentDirection), With<Player>>,
     item_query: Query<(&Transform, Entity), With<Item>>,
 ) {
@@ -26,7 +26,7 @@ pub fn interact(
             &current_direction.0,
         );
 
-        if keyboard_input.just_pressed(KeyCode::E) {
+        if keyboard_input.just_pressed(KeyCode::KeyE) {
             interact_with_item(&mut event_writer, &item_query, player_data);
         }
     }

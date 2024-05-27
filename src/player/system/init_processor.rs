@@ -9,7 +9,7 @@ use crate::player::PlayerCreateEvent;
 pub fn process_init(
     mut commands: Commands,
     mut event_reader: EventReader<PlayerCreateEvent>,
-    player_texture_atlas: ResMut<PlayerTextureAtlas>,
+    player_texture_atlas: Res<PlayerTextureAtlas>,
     mut player_mapping: ResMut<PlayerMapping>,
     player_uuid: Res<PlayerUuid>,
 ) {
@@ -23,11 +23,16 @@ pub fn process_init(
         //     commands.entity(entity).despawn();
         // }
 
+        let args = PlayerTextureAtlas(
+            player_texture_atlas.0.clone(),
+            player_texture_atlas.1.clone(),
+        );
+
         let player_entity = if event_uuid.eq(&player_uuid) {
             commands
                 .spawn(create_player_entity(
                     event.0,
-                    player_texture_atlas.0.clone(),
+                    args,
                     Vec3::from((event.1, PLAYER_Z_INDEX)),
                     event.2,
                 ))
@@ -36,7 +41,7 @@ pub fn process_init(
             commands
                 .spawn(create_character_entity(
                     event.0,
-                    player_texture_atlas.0.clone(),
+                    args,
                     Vec3::from((event.1, PLAYER_Z_INDEX)),
                     event.2,
                 ))

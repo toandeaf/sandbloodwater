@@ -25,9 +25,9 @@ pub fn move_player(
         (&mut Transform, &mut AnimationTimer, &CharacterMarker),
         (With<Player>, Without<TileType>),
     >,
-    tile_query: Query<(&Transform, &TextureAtlasSprite, &TileType), With<TileType>>,
+    tile_query: Query<(&Transform, &Sprite, &TileType), With<TileType>>,
     solid_query: Query<(&Transform, &Sprite), (With<Solid>, Without<Player>)>,
-    keyboard_input: Res<Input<KeyCode>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     player_attributes: Res<PlayerAttributes>,
     mut client: ResMut<Client>,
@@ -43,16 +43,18 @@ pub fn move_player(
         if timer.just_finished() {
             keyboard_input.get_pressed().for_each(|key_pressed| {
                 let new_direction_opt = match key_pressed {
-                    KeyCode::W => Some(Direction::Up),
-                    KeyCode::S => Some(Direction::Down),
-                    KeyCode::A => Some(Direction::Left),
-                    KeyCode::D => Some(Direction::Right),
+                    KeyCode::KeyW => Some(Direction::Up),
+                    KeyCode::KeyS => Some(Direction::Down),
+                    KeyCode::KeyA => Some(Direction::Left),
+                    KeyCode::KeyD => Some(Direction::Right),
                     _ => None,
                 };
 
                 if let Some(direction) = new_direction_opt {
                     let player_data = (player_transform.translation, player_radius, &direction);
 
+                    // TODO - collision detection borked after bevy bump.
+                    // AtlasSprite -> Sprite may have thrown the query off.
                     let speed_modifier = calculate_collision_or_speed_adjustment(
                         &tile_query,
                         &solid_query,
@@ -84,7 +86,7 @@ pub fn move_player(
 // 6. Seem filter and evaluations as steps 2. and 3.
 // 7. If there is an overlap of the player contact point with entity's (tile here) relevant "side" -> return tile specific speed modifier.
 fn calculate_collision_or_speed_adjustment(
-    tile_query: &Query<(&Transform, &TextureAtlasSprite, &TileType), With<TileType>>,
+    tile_query: &Query<(&Transform, &Sprite, &TileType), With<TileType>>,
     solid_query: &Query<(&Transform, &Sprite), (With<Solid>, Without<Player>)>,
     player_data: (Vec3, f32, &Direction),
 ) -> Speed {
@@ -123,7 +125,7 @@ fn calculate_collision_or_speed_adjustment(
         // Same component iteration logic, except we're going through the remaining tiles now
         let speed_change_eval = detect_player_component_interaction(
             player_data,
-            (tile_transform, sprite_radius, Some(tile_type)),
+            (tile_transform, sprite_radius, Some(&tile_type)),
         );
 
         if let Some(speed_change_eval) = speed_change_eval {
