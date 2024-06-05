@@ -1,10 +1,7 @@
-use bevy::math::Vec3Swizzles;
 use bevy::prelude::{Commands, Component, Query, Res, Time, Timer, Transform, With};
 use bevy::time::TimerMode;
 
-use crate::common::EventWrapper;
-use crate::network::server::infra::dispatch_all;
-use crate::player::{CharacterMarker, CurrentDirection, PlayerSyncEvent};
+use crate::player::{CharacterMarker, CurrentDirection};
 
 #[derive(Component)]
 pub struct SyncTimer(pub Timer);
@@ -18,18 +15,18 @@ pub fn sync(
     player_query: Query<(&Transform, &CharacterMarker, &CurrentDirection), With<CharacterMarker>>,
     time: Res<Time>,
 ) {
-    for mut timer in time_query.iter_mut() {
-        timer.0.tick(time.delta());
-
-        if timer.0.finished() {
-            for (transform, marker, direction) in player_query.iter() {
-                let player_sync_event = EventWrapper::PlayerSync(PlayerSyncEvent(
-                    marker.0,
-                    transform.translation.xy(),
-                    direction.0,
-                ));
-                dispatch_all(&player_sync_event);
-            }
-        }
-    }
+    // for mut timer in time_query.iter_mut() {
+    //     timer.0.tick(time.delta());
+    //
+    //     if timer.0.finished() {
+    //         for (transform, marker, direction) in player_query.iter() {
+    //             let player_sync_event = EventWrapper::PlayerSync(PlayerSyncEvent(
+    //                 marker.0,
+    //                 transform.translation.xy(),
+    //                 direction.0,
+    //             ));
+    //             dispatch_all(&player_sync_event);
+    //         }
+    //     }
+    // }
 }

@@ -15,25 +15,11 @@ pub struct PlayerCreateEvent(pub Uuid, pub Vec2, pub Direction);
 #[derive(Event, Serialize, Deserialize, Copy, Clone)]
 pub struct PlayerSyncEvent(pub Uuid, pub Vec2, pub Direction);
 
-#[derive(Resource)]
-pub struct PlayerMapping(pub HashMap<Uuid, Entity>);
+#[derive(Resource, Default)]
+pub struct EntityMapping(pub HashMap<Uuid, Entity>);
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct PlayerTextureAtlas(pub Handle<TextureAtlasLayout>, pub Handle<Image>);
-
-impl Default for PlayerTextureAtlas {
-    fn default() -> Self {
-        PlayerTextureAtlas(Handle::default(), Handle::default())
-    }
-}
-
-impl Default for PlayerMapping {
-    fn default() -> Self {
-        {
-            PlayerMapping(HashMap::new())
-        }
-    }
-}
 
 pub fn initialise_player(
     mut commands: Commands,
