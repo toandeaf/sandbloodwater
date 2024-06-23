@@ -1,8 +1,7 @@
 use bevy::prelude::*;
 
 use crate::item::Item;
-use crate::player::component::{Activity, CurrentDirection, Direction, Player};
-use crate::player::resource::PlayerAttributes;
+use crate::player::component::{Activity, Attributes, CurrentDirection, Direction, Player};
 
 #[derive(Event)]
 pub struct InteractionEvent(pub Entity, pub Entity, pub Vec3);
@@ -10,18 +9,15 @@ pub struct InteractionEvent(pub Entity, pub Entity, pub Vec3);
 #[allow(clippy::type_complexity)]
 pub fn interact(
     mut event_writer: EventWriter<InteractionEvent>,
-    player_attributes: Res<PlayerAttributes>,
     keyboard_input: ResMut<ButtonInput<KeyCode>>,
-    mut player_query: Query<(&Transform, Entity, &CurrentDirection), With<Player>>,
+    mut player_query: Query<(&Transform, &Attributes, Entity, &CurrentDirection), With<Player>>,
     item_query: Query<(&Transform, Entity), With<Item>>,
 ) {
     // TODO Player radius should go into player attributes as it won't fluctuate wildly.
-    let player_radius = player_attributes.radius;
-
-    for (player_transform, player_entity, current_direction) in &mut player_query {
+    for (player_transform, attributes, player_entity, current_direction) in &mut player_query {
         let player_data = (
             player_transform.translation,
-            player_radius,
+            attributes.radius,
             player_entity,
             &current_direction.0,
         );
