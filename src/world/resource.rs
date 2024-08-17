@@ -1,12 +1,13 @@
 use std::str::from_utf8;
 
-use bevy::utils::thiserror;
 use bevy::{
-    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
+    asset::{AssetLoader, AsyncReadExt, io::Reader, LoadContext},
     prelude::*,
     reflect::TypePath,
     utils::BoxedFuture,
 };
+use bevy::utils::thiserror;
+
 use thiserror::Error;
 
 use crate::world::utils::load_map_config_from_file;
@@ -59,7 +60,7 @@ impl AssetLoader for MapLoader {
         Box::pin(async move {
             let mut bytes = Vec::new();
 
-            reader.read_to_end(&mut bytes).await?;
+            reader.read_to_end(&mut bytes).await.expect("TODO: panic message");
 
             let vals = from_utf8(&bytes).unwrap();
 

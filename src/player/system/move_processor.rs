@@ -1,5 +1,5 @@
 use bevy::math::Vec3;
-use bevy::prelude::{EventReader, Parent, Query, Res, Sprite, TextureAtlas, Time, Transform, With, Without};
+use bevy::prelude::{EventReader, Parent, Query, Rect, Res, Sprite, TextureAtlas, Time, Transform, With, Without};
 use bevy::utils::Uuid;
 
 use crate::item::{Item, Solid};
@@ -16,9 +16,8 @@ const TILE_SIZE: f32 = 30.0;
 #[allow(clippy::type_complexity)]
 pub fn process_position_change(
     mut event_reader: EventReader<MovementEvent>,
-    mut entity_movement_query: Query<(&mut Transform, &Attributes, &mut TextureAtlas, &mut CurrentDirection), (With<Player>, Without<TileType>)>,
-    tile_query: Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
-    solid_query: Query<(&Transform, &Sprite), (With<Solid>, Without<Player>)>,
+    mut entity_movement_query: Query<(&mut Transform, &Sprite, &Attributes, &mut TextureAtlas, &mut CurrentDirection), (With<Player>, Without<TileType>)>,
+    solid_query: Query<(&Transform, &Sprite, Option<&TileType>), (With<Solid>, Without<Player>)>,
     entity_mapping: Res<EntityMapping>,
     time: Res<Time>,
 ) {
@@ -33,7 +32,7 @@ pub fn process_position_change(
             let player_res = entity_movement_query.get_mut(*ent_to_move);
 
             if let Ok(player_bundle) = player_res {
-                let (mut transform, attributes, mut movement_sprite_sheet, mut current_direction) =
+                let (mut transform, sprite, attributes, mut movement_sprite_sheet, mut current_direction) =
                     player_bundle;
 
                 let player_base_speed = attributes.speed;
@@ -47,13 +46,20 @@ pub fn process_position_change(
 
                 let player_data = (transform.translation, player_radius, &current_direction.0);
 
-                // TODO - collision detection borked after bevy bump.
-                // AtlasSprite -> Sprite may have thrown the query off.
-                let speed_modifier = calculate_collision_or_speed_adjustment(
-                    &tile_query,
-                    &solid_query,
-                    player_data,
-                );
+                let proposed_val = direction.new_position(transform.translation, 1.);
+
+                for (solid_trans, solid_sprite, tile_type_opt) in solid_query.iter() {
+                    println!("solid sprite {:?}", solid_sprite.custom_size);
+                }
+
+                // // TODO - collision detection borked after bevy bump.
+                // // AtlasSprite -> Sprite may have thrown the query off.
+                // let speed_modifier = calculate_collision_or_speed_adjustment(
+                //     &solid_query,
+                //     player_data,
+                // );
+
+                let speed_modifier = 1.;
 
                 // Player's attribute speed multiplied by the speed adjustment from the tile contact.
                 // The time.delta_seconds is to enforce the "real" speed. If we don't factor in
@@ -66,6 +72,20 @@ pub fn process_position_change(
             }
         }
     }
+}
+
+fn aabb_collision(rect1_opt: Option<Rect>, rect2_opt: Option<Rect>) -> bool {
+    if rect1_opt.is_none() && rect2_opt.is_none() {
+        return false;
+    };
+
+    let rect1 = rect1_opt.unwrap();
+    let rect2 = rect2_opt.unwrap();
+
+    rect1.min.x < rect2.min.x + rect2.width() &&
+        rect1.min.x + rect1.width() > rect2.min.x &&
+        rect1.min.y < rect2.min.y + rect2.height() &&
+        rect1.min.y + rect1.height() > rect2.min.y
 }
 
 pub fn process_direction_change(
@@ -105,22 +125,29 @@ fn calculate_next_sprite(direction: &Direction, current_sprite_index: &usize) ->
 // 7. If there is an overlap of the player contact point with entity's (tile here) relevant "side" -> return tile specific speed modifier.
 fn calculate_collision_or_speed_adjustment(
     tile_query: &Query<(&Transform, &Sprite, &TileType), (With<TileType>, Without<Player>)>,
-    solid_query: &Query<(&Transform, &Sprite), (With<Solid>, Without<Player>)>,
+    solid_query: &Query<(&Transform, &Sprite, &TileType), (With<Solid>, Without<Player>)>,
     player_data: (Vec3, f32, &Direction),
 ) -> f32 {
-    for (target_transform, sprite) in solid_query.iter() {
-        // Seeing if the player interacts with any "Solid" components first.
-        let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
-        let collision_eval = detect_player_component_interaction(
-            player_data,
-            (target_transform, sprite_radius, None),
-        );
-
-        if let Some(collision_speed_change) = collision_eval {
-            // If there was a collision, return the speed adjustment (it'll return 0).
-            return collision_speed_change;
-        }
-    }
+    // for (tile_transform, sprite) in solid_query.iter() {
+    //     // Seeing if the player interacts with any "Solid" components first.
+    //     // let sprite_radius = sprite.custom_size.map(|vec| vec.y).unwrap_or_default() / 2.;
+    //     // let collision_eval = detect_player_component_interaction(
+    //     //     player_data,
+    //     //     (target_transform, sprite_radius, None),
+    //     // );
+    //     //
+    //     // if let Some(collision_speed_change) = collision_eval {
+    //     //     // If there was a collision, return the speed adjustment (it'll return 0).
+    //     //     return collision_speed_change;
+    //     // }
+    //
+    //     let doob = tile_transform.translation.abs_diff_eq(player_data.0, 10.);
+    //
+    //     if doob {
+    //         println!("Less than 10!");
+    //         return 0.;
+    //     }
+    // }
 
     // If player hasn't collided with anything, we'll see what tile they're on and whether
     // that should affect the speed.

@@ -46,7 +46,7 @@ pub fn create_map_tile_entity(
         tile_type,
     };
 
-    if tile_type.speed_modifier().is_zero() {
+    if tile_type.speed_modifier() == 0. {
         return SolidTileBundle(SolidWorldTileBundle {
             world_tile_bundle,
             solid: Solid,
