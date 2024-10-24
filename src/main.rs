@@ -20,7 +20,6 @@ use bevy::prelude::*;
 fn main() {
     App::new()
         .add_plugins(StandalonePlugin)
-        // .add_plugins((DefaultPlugins, EmbeddedAssetPlugin::default(), GamePlugin))
         .run();
 }
 

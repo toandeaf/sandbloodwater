@@ -17,8 +17,7 @@ pub struct StandalonePlugin;
 
 impl Plugin for StandalonePlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_plugins((EventsPlugin, EventProcessingPlugin))
+        app.add_plugins((EventsPlugin, EventProcessingPlugin))
             .add_plugins((StateUpdateEventsPlugin, StateUpdateSystemsPlugin))
             .add_plugins((PlayerRunPlugin, EntityRunPlugin, WorldRunSystemsPlugin))
             .add_plugins((EntityResponsePlugin, WorldResponsePlugin))
@@ -26,11 +25,12 @@ impl Plugin for StandalonePlugin {
             .add_systems(Startup, standalone_system);
 
         // Adding a camera and rendering a sprite
+        // Candidate: Client + Standalone
         app.add_plugins(AssetPlugin::default());
-        app.add_plugins(CorePipelinePlugin);
-        app.add_plugins(SpritePlugin);
         app.add_plugins(RenderPlugin::default());
         app.add_plugins(ImagePlugin::default());
+        app.add_plugins(CorePipelinePlugin);
+        app.add_plugins(SpritePlugin);
 
         // The exhaustive set of plugins that come bundled as part of the
         // wider "DefaultPlugins" bundle. Plan is to bring these in as needed.
