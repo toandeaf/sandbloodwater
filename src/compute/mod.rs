@@ -1,8 +1,9 @@
-pub mod response;
+mod response;
 mod triggers;
 
 use crate::compute::response::ResponseSystemsPlugin;
 use crate::compute::triggers::TriggerSystemsPlugin;
+
 pub use bevy::prelude::*;
 
 pub struct ComputePlugin;
