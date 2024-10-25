@@ -8,14 +8,15 @@ mod server;
 mod standalone;
 
 use crate::events::CoreEventsPlugin;
-use crate::standalone::StandalonePlugin;
+use crate::server::ServerPlugin;
 use bevy::prelude::*;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     App::new()
         .add_plugins(CoreEventsPlugin)
         // The below plugin dictates the execution mode: client, server or standalone (both client and server)
-        .add_plugins(StandalonePlugin)
+        .add_plugins(ServerPlugin)
         .run();
 
     // The exhaustive set of plugins that come bundled as part of the

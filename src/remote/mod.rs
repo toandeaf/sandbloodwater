@@ -1,5 +1,5 @@
-mod remote_client;
-mod remote_server;
+mod client;
+mod server;
 
-pub use remote_client::RemoteClientPlugin;
-pub use remote_server::RemoteServerPlugin;
+pub use client::RemoteClientPlugin;
+pub use server::RemoteServerPlugin;
