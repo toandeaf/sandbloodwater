@@ -35,14 +35,14 @@ pub fn create_item(
 
     // TODO Replace this with player size?
     if size > LARGE_ITEM_SIZE_MINIMUM {
-        let image_handle: Handle<Image> = asset_server.load("embedded://world/box.png");
+        let image_handle: Handle<Image> = asset_server.load("embedded://response/box.png");
         commands.spawn(create_large_item_entity(position, size, image_handle));
     } else if (MEDIUM_ITEM_SIZE_MINIMUM..LARGE_ITEM_SIZE_MINIMUM).contains(&size) {
-        let image_handle: Handle<Image> = asset_server.load("embedded://world/box.png");
+        let image_handle: Handle<Image> = asset_server.load("embedded://response/box.png");
 
         commands.spawn(create_medium_item_entity(position, size, image_handle));
     } else {
-        let image_handle: Handle<Image> = asset_server.load("embedded://world/box.png");
+        let image_handle: Handle<Image> = asset_server.load("embedded://response/box.png");
         commands.spawn(create_small_item_entity(position, size, image_handle));
     }
 }

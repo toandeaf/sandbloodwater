@@ -15,7 +15,7 @@ pub fn init_map_assets(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let atlas_texture_handle: Handle<Image> = asset_server.load("embedded://world/main.png");
+    let atlas_texture_handle: Handle<Image> = asset_server.load("embedded://response/main.png");
 
     let texture_atlas = TextureAtlasLayout::from_grid(Vec2::new(32., 32.0), 46, 46, None, None);
     let atlas_layout_handle = texture_atlases.add(texture_atlas);

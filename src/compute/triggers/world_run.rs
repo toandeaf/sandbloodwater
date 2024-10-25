@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 
-pub struct WorldRunSystemsPlugin;
+pub struct WorldTriggerPlugin;
 
-impl Plugin for WorldRunSystemsPlugin {
+impl Plugin for WorldTriggerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, server_system);
     }
 }
 
 fn server_system() {
-    println!("Initialising world run plugin.");
+    println!("Initialising response run plugin.");
 }

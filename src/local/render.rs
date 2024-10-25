@@ -1,7 +1,11 @@
+use crate::player::PlayerPlugin;
 use bevy::a11y::AccessibilityPlugin;
+use bevy::core_pipeline::CorePipelinePlugin;
 use bevy::input::InputPlugin;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
+use bevy::render::RenderPlugin;
+use bevy::sprite::SpritePlugin;
 use bevy::window::PrimaryWindow;
 use bevy::winit::{WakeUp, WinitPlugin};
 
@@ -17,7 +21,6 @@ impl Plugin for LocalRenderPlugin {
         // Window shit
         app.add_plugins(WindowPlugin::default());
         app.add_plugins(WinitPlugin::<WakeUp>::default());
-
         app.add_plugins(AccessibilityPlugin);
 
         // Logs
@@ -25,6 +28,16 @@ impl Plugin for LocalRenderPlugin {
 
         // Input
         app.add_plugins(InputPlugin);
+
+        // Adding a camera and rendering a sprite
+        app.add_plugins(AssetPlugin::default());
+        app.add_plugins(RenderPlugin::default());
+        app.add_plugins(ImagePlugin::default());
+        app.add_plugins(CorePipelinePlugin);
+        app.add_plugins(SpritePlugin);
+
+        // Adding player
+        app.add_plugins(PlayerPlugin);
     }
 }
 

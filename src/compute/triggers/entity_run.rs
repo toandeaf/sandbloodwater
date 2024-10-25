@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
-pub struct EntityRunPlugin;
+pub struct EntityTriggerPlugin;
 
-impl Plugin for EntityRunPlugin {
+impl Plugin for EntityTriggerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, entity_run_system);
     }

@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
-pub struct PlayerRunPlugin;
+pub struct PlayerTriggerPlugin;
 
-impl Plugin for PlayerRunPlugin {
+impl Plugin for PlayerTriggerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, player_action_system);
     }

@@ -9,5 +9,5 @@ impl Plugin for WorldResponsePlugin {
 }
 
 fn world_response_systems() {
-    println!("Initialising world response plugin.");
+    println!("Initialising response response plugin.");
 }
