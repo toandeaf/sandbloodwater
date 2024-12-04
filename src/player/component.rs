@@ -8,6 +8,13 @@ use serde::{Deserialize, Serialize};
 pub struct Player;
 
 #[derive(Component)]
+pub struct Attributes {
+    pub size: f32,
+    pub radius: f32,
+    pub speed: f32,
+}
+
+#[derive(Component)]
 pub struct CharacterMarker(pub Uuid);
 
 // TODO might just be able to use Res<Time> and predicate on seconds

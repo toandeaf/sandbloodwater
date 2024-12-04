@@ -1,14 +1,14 @@
 use bevy::prelude::*;
 use bevy::utils::Uuid;
 
-use crate::player::system::PlayerMapping;
 use crate::player::{CharacterMarker, CurrentDirection, PlayerCreateEvent, PlayerSyncEvent};
+use crate::player::system::EntityMapping;
 
 pub fn process_sync(
     mut character_query: Query<(&mut Transform, &mut CurrentDirection), With<CharacterMarker>>,
     mut event_reader: EventReader<PlayerSyncEvent>,
     mut player_create_writer: EventWriter<PlayerCreateEvent>,
-    player_mapping: ResMut<PlayerMapping>,
+    player_mapping: ResMut<EntityMapping>,
 ) {
     for sync_event in event_reader.read() {
         let (character_uuid, new_position, new_direction) =

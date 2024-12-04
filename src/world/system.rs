@@ -1,5 +1,6 @@
 use bevy::asset::Assets;
-use bevy::prelude::{AssetServer, Commands, Handle, Image, Res, ResMut, TextureAtlasLayout, Vec2};
+use bevy::math::UVec2;
+use bevy::prelude::{AssetServer, Commands, Handle, Image, Res, ResMut, TextureAtlasLayout};
 
 use crate::world::resource::{MapHandles, MapLayout};
 
@@ -17,7 +18,7 @@ pub fn init_map_assets(
 ) {
     let atlas_texture_handle: Handle<Image> = asset_server.load("embedded://world/main.png");
 
-    let texture_atlas = TextureAtlasLayout::from_grid(Vec2::new(32., 32.0), 46, 46, None, None);
+    let texture_atlas = TextureAtlasLayout::from_grid(UVec2::new(32, 32), 46, 46, None, None);
     let atlas_layout_handle = texture_atlases.add(texture_atlas);
 
     // The embedded assets plugin allows us to bundle our assets with our executable.
